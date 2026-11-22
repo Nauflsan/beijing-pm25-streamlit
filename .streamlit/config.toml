@@ -1,0 +1,14 @@
+# Tema TERANG saja (mode gelap sengaja dimatikan).
+# [TERKAIT] warna di sini harus sama dengan konfigurasi.py bagian 9 (WARNA_AKSEN, WARNA_LATAR, WARNA_TEKS).
+[theme]
+base = "light"
+primaryColor = "#2F6FAE"
+backgroundColor = "#F5F8FC"
+secondaryBackgroundColor = "#E8F0F9"
+textColor = "#1F2D3D"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true

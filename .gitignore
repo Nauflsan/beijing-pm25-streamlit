@@ -1,0 +1,19 @@
+# lingkungan & cache
+env/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# hasil uji / log / bahan laporan (tidak ikut deploy)
+artifacts_dummy/
+logs/
+bahan_laporan/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# CATATAN: folder artifacts/ (models + hasil.json + prediksi_uji.csv) SENGAJA ikut di-commit
+# karena Streamlit Cloud membaca model dari repo. Batas GitHub: 100 MB per file.
