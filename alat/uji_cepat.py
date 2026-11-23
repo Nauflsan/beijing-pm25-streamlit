@@ -1,5 +1,5 @@
 """
-uji_cepat.py - jalankan SEBELUM training penuh:  python uji_cepat.py
+uji_cepat.py - jalankan SEBELUM training penuh:  python -m alat.uji_cepat
 Memeriksa: (1) data terbaca, (2) batas kategori udara, (3) tidak ada kebocoran masa depan di fitur lag/rolling,
 (4) buat_baris_fitur (dipakai halaman Prediksi) sama persis dengan fitur untuk training, (5) alur latih
 lengkap di data kecil (2.000 baris) -> artifacts_dummy/ (DUMMY, bukan hasil asli).
@@ -10,10 +10,10 @@ import sys
 import numpy as np
 import pandas as pd
 
-import fitur_waktu as fw
-import kategori_udara as ku
+from preprocessing import fitur_waktu as fw
+from evaluasi import kategori_udara as ku
 import konfigurasi as cfg
-import utilitas_data as ud
+from preprocessing import utilitas_data as ud
 
 T = cfg.KOLOM_TARGET
 GAGAL = []
@@ -92,7 +92,7 @@ def uji_baris_fitur(df):
 def uji_alur_latih():
     """Fungsi: jalankan latih_semua_model --cepat --sampel 2000 --ulang dan cek keluarannya (artifacts_dummy/)."""
     print("5) Alur latih lengkap di data kecil (DUMMY)")
-    import latih_semua_model as lt
+    from model import latih_semua_model as lt
     path = lt.main(["--cepat", "--sampel", "2000", "--ulang"])
     hasil = ud.muat_json(path)
     for kunci in ["ridge_A", "dt_A", "rf_A", "hgb_A", "ridge_B", "dt_B", "rf_B", "hgb_B", "rf_pso_B"]:
@@ -103,7 +103,7 @@ def uji_alur_latih():
     cek("hasil.json ditandai dummy", hasil["meta"]["dummy"] is True)
     cek("prediksi_uji.csv ada", (path.parent / cfg.NAMA_FILE_PREDIKSI_UJI).exists())
     # peta kolom -> fitur (halaman Preprocessing & PANDUAN_HALAMAN.md) konsisten dengan hasil.json
-    import peta_fitur as pf
+    from preprocessing import peta_fitur as pf
     tabel, peringatan = pf.bangun_tabel(hasil)
     r = pf.ringkasan_jumlah(hasil)
     cek("peta_fitur: semua fitur terpetakan ke kolom asal (tanpa peringatan)", not peringatan, str(peringatan))
@@ -113,6 +113,13 @@ def uji_alur_latih():
         r["n_enkode_b"] == r["n_fitur_b"] + len(cfg.KELAS_ARAH_ANGIN) - 1,
         f"{r}")
     cek("peta_fitur: 5 pertanyaan dosen terbentuk", len(pf.pertanyaan_dosen(hasil)) == 5)
+    # peta hasil.json -> kode (halaman Preprocessing/PCA dan PANDUAN_KODE.md) masih menunjuk fungsi yang ada
+    from evaluasi import bukti_kode as bk
+    hilang = bk.semua_entri_ada()
+    cek("bukti_kode: semua fungsi di peta masih ada di file asalnya", not hilang, str(hilang))
+    # eksperimen di hasil.json bisa dihitung ulang dan cocok (dummy)
+    from evaluasi import bukti_eksperimen as be
+    cek("bukti_eksperimen: hitung ulang cocok dengan hasil.json (dummy)", be.main(["--dummy"]) == 0)
 
 
 if __name__ == "__main__":

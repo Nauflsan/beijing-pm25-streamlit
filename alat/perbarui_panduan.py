@@ -1,8 +1,8 @@
 """
-perbarui_panduan.py - mengisi ulang angka dan tabel di PANDUAN_HALAMAN.md dari artifacts/hasil.json dan CSV.
+perbarui_panduan.py - mengisi ulang angka dan tabel di PANDUAN_HALAMAN.md dan PANDUAN_KODE.md dari artifacts/hasil.json dan CSV.
 
-Jalankan setiap selesai training ulang:   python perbarui_panduan.py
-(untuk uji dengan artefak dummy:           python perbarui_panduan.py --dummy)
+Jalankan setiap selesai training ulang:   python -m alat.perbarui_panduan
+(untuk uji dengan artefak dummy:           python -m alat.perbarui_panduan --dummy)
 
 Yang diisi ulang hanya yang dibungkus penanda:
   <!--ANGKA:kunci-->nilai<!--/ANGKA-->           angka satu baris
@@ -14,11 +14,12 @@ import re
 import sys
 
 import konfigurasi as cfg
-import kategori_udara as ku
-import peta_fitur as pf
-import utilitas_data as ud
+from evaluasi import bukti_kode as bk
+from evaluasi import kategori_udara as ku
+from preprocessing import peta_fitur as pf
+from preprocessing import utilitas_data as ud
 
-FILE_PANDUAN = cfg.FOLDER_PROYEK / "PANDUAN_HALAMAN.md"
+FILE_PANDUAN = [cfg.FOLDER_PROYEK / "dokumen" / "PANDUAN_HALAMAN.md", cfg.FOLDER_PROYEK / "dokumen" / "PANDUAN_KODE.md"]
 
 
 def kumpulkan_angka(hasil, df):
@@ -28,7 +29,33 @@ def kumpulkan_angka(hasil, df):
     """
     ring = ud.ringkasan_dataset(df)
     r = pf.ringkasan_jumlah(hasil)
-    return {
+    f1 = lambda x: ud.fmt_id(x, 1)
+    f2 = lambda x: ud.fmt_id(x, 2)
+    eks = hasil.get("eksperimen", {})
+    pca = {m: eks.get("pca", {}).get(m) for m in ("A", "B")}
+    pers = lambda a, b: (a - b) / b * 100
+    ekstra = {}
+    if pca["A"] and pca["B"]:
+        for m in ("A", "B"):
+            x, k = pca[m], m.lower()
+            ekstra.update({f"pca_awal_{k}": str(x["n_fitur_setelah_enkode"]), f"pca_k95_{k}": str(x["varian"]["0.95"]["n_komponen"]),
+                           f"pca_rmse95_{k}": f2(x["varian"]["0.95"]["metrik"]["rmse"]), f"pca_rmse_tanpa_{k}": f2(x["tanpa_pca"]["rmse"]),
+                           f"pca_naik_{k}": f1(pers(x["varian"]["0.95"]["metrik"]["rmse"], x["tanpa_pca"]["rmse"]))})
+        ekstra["kbest15_rmse_b"] = f2(pca["B"]["select_k_best"]["15"]["rmse"])
+    if eks:
+        isi, lg, sk = eks["isi_kosong"], eks["log_target"], eks["skala"]
+        ekstra.update({"isi_ffill": f2(isi["ffill"]["rmse"]), "isi_median": f2(isi["median_latih"]["rmse"]),
+                       "isi_interp": f2(isi["interpolasi_bocor"]["rmse"]),
+                       "log_a_asli": f2(lg["A"]["skala_asli"]["rmse"]), "log_a_log": f2(lg["A"]["target_log1p"]["rmse"]),
+                       "log_b_asli": f2(lg["B"]["skala_asli"]["rmse"]), "log_b_log": f2(lg["B"]["target_log1p"]["rmse"]),
+                       "skala_b_dengan": ud.fmt_id(sk["B"]["dengan_skala"]["rmse"], 3), "skala_b_tanpa": ud.fmt_id(sk["B"]["tanpa_skala"]["rmse"], 3)})
+    pem = hasil.get("pemenang", {})
+    for m in ("A", "B"):
+        if pem.get(m):
+            pp = hasil["model"][pem[m]]["polusi_parah"]
+            ekstra[f"parah_{m.lower()}_kali"] = f1(pp["parah"]["mae"] / pp["normal"]["mae"])
+    ekstra.update({"n_latih": ud.fmt_id(hasil["data"]["n_latih"], 0), "n_uji": ud.fmt_id(hasil["data"]["n_uji"], 0)})
+    return {**ekstra,
         "n_baris": ud.fmt_id(ring["n_baris"], 0),
         "tahun_awal": ring["waktu_awal"][:4], "tahun_akhir": ring["waktu_akhir"][:4],
         "n_kosong": ud.fmt_id(ring["n_kosong_target"], 0), "persen_kosong": ud.fmt_id(ring["persen_kosong_target"], 2),
@@ -48,7 +75,8 @@ def kumpulkan_blok(hasil):
     if peringatan:
         teks_tabel += "\n\n" + "\n".join(f"> PERINGATAN: {p}" for p in peringatan)
     tj = "\n\n".join(f"**{i}. {q}**\n\n{a}" for i, (q, a) in enumerate(pf.pertanyaan_dosen(hasil), 1))
-    return {"tabel_kolom_ke_fitur": teks_tabel, "tanya_jawab_fitur": tj}
+    peta = pf.tabel_ke_markdown(__import__("pandas").DataFrame(bk.tabel_peta()))
+    return {"tabel_kolom_ke_fitur": teks_tabel, "tanya_jawab_fitur": tj, "peta_hasil": peta}
 
 
 def isi_ulang(teks, angka, blok):
@@ -87,10 +115,14 @@ def main():
     if hasil.get("meta", {}).get("dummy") and not args.dummy:
         sys.exit("hasil.json ini bertanda DUMMY. Jalankan training asli dulu (--penuh).")
     df = ud.muat_data_mentah()
-    teks = FILE_PANDUAN.read_text(encoding="utf-8")
-    baru, n = isi_ulang(teks, kumpulkan_angka(hasil, df), kumpulkan_blok(hasil))
-    FILE_PANDUAN.write_text(baru, encoding="utf-8")
-    print(f"PANDUAN_HALAMAN.md diperbarui: {n} penanda diisi ulang dari {folder / cfg.NAMA_FILE_HASIL}")
+    angka, blok = kumpulkan_angka(hasil, df), kumpulkan_blok(hasil)
+    for berkas in FILE_PANDUAN:
+        if not berkas.exists():
+            print(f"(lewati {berkas.name}: file tidak ada)")
+            continue
+        baru, n = isi_ulang(berkas.read_text(encoding="utf-8"), angka, blok)
+        berkas.write_text(baru, encoding="utf-8")
+        print(f"{berkas.name} diperbarui: {n} penanda diisi ulang dari {folder / cfg.NAMA_FILE_HASIL}")
     if hasil.get("meta", {}).get("dummy"):
         print("Catatan: ini dari artefak DUMMY; angka fitur sama dengan hasil asli, tetapi jalankan ulang tanpa --dummy setelah training penuh.")
 

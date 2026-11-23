@@ -1,7 +1,7 @@
 """
 uji_halaman.py - uji asap tiap halaman tanpa membuka browser (streamlit.testing.v1.AppTest).
-Jalankan:  python uji_halaman.py            (memakai artifacts/ asli)
-           python uji_halaman.py --dummy    (memakai artifacts_dummy/, untuk menguji tampilan sebelum training selesai)
+Jalankan:  python -m alat.uji_halaman            (memakai artifacts/ asli)
+           python -m alat.uji_halaman --dummy    (memakai artifacts_dummy/, untuk menguji tampilan sebelum training selesai)
 Lulus = tidak ada exception di halaman manapun.
 """
 import os
@@ -15,7 +15,7 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 
 import konfigurasi as cfg  # noqa: E402
 
-RAKYAT = Path(__file__).resolve().parent
+RAKYAT = Path(__file__).resolve().parent.parent   # folder proyek (alat/ ada satu tingkat di bawahnya)
 HALAMAN = sorted(p for p in (RAKYAT / "halaman").rglob("*.py"))
 
 

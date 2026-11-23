@@ -9,7 +9,7 @@ from sklearn.metrics import (mean_absolute_error, mean_squared_error, median_abs
 from sklearn.model_selection import TimeSeriesSplit
 
 import konfigurasi as cfg
-import kategori_udara as ku
+from evaluasi import kategori_udara as ku
 
 KUANTIL = [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]   # [TERKAIT] halaman Prediksi memakai 0.05 dan 0.95
 MIN_SAMPEL_KUANTIL = 30                                 # kategori dengan sampel lebih sedikit -> pakai kuantil global

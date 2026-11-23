@@ -7,7 +7,7 @@ Tag komentar yang dipakai di seluruh proyek:
   # [JANGAN UBAH]  diubah = proyek rusak / hasil tidak konsisten
 
 Setelah mengubah parameter MODEL atau FITUR, jalankan ulang:
-  python latih_semua_model.py --penuh --ulang
+  python -m model.latih_semua_model --penuh --ulang
 """
 import os
 from pathlib import Path

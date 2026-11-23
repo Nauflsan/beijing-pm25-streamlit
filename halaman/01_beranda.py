@@ -7,11 +7,11 @@ Kalau hasil.json belum ada, halaman tetap tampil dan memberi pesan ramah.
 import pandas as pd
 import streamlit as st
 
-import grafik
+from tampilan import grafik
 import konfigurasi as cfg
-import kategori_udara as ku
-import tema_langit_beijing as tema
-import utilitas_app as ua
+from evaluasi import kategori_udara as ku
+from tampilan import tema_langit_beijing as tema
+from tampilan import utilitas_app as ua
 
 T = cfg.KOLOM_TARGET
 df = ua.muat_data()

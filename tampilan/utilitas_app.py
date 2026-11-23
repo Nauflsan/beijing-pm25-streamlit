@@ -7,10 +7,11 @@ File ini mengimpor streamlit (berbeda dengan utilitas_data.py yang bebas streaml
 import streamlit as st
 
 import konfigurasi as cfg
-import kategori_udara as ku
-import utilitas_data as ud
+from evaluasi import kategori_udara as ku
+from evaluasi import bukti_kode as bk
+from preprocessing import utilitas_data as ud
 
-PESAN_ARTEFAK_KOSONG = ("Hasil training belum ada. Jalankan `python latih_semua_model.py --penuh` dulu "
+PESAN_ARTEFAK_KOSONG = ("Hasil training belum ada. Jalankan `python -m model.latih_semua_model --penuh` dulu "
                         "(lihat CARA_MENJALANKAN.md), lalu muat ulang halaman ini.")
 
 
@@ -105,3 +106,21 @@ def kalimat_temuan(hasil):
 def indeks_kategori_rata(nilai):
     """Fungsi: indeks kategori untuk satu nilai PM2.5 (dipakai untuk mewarnai KPI/header). Output: int 0-5."""
     return ku.indeks_kategori(float(nilai))
+
+
+def persen_selisih(nilai, acuan):
+    """Fungsi: selisih relatif nilai terhadap acuan dalam persen ((nilai-acuan)/acuan*100). Output: float, None kalau acuan 0/None."""
+    if acuan in (None, 0) or nilai is None:
+        return None
+    return (nilai - acuan) / acuan * 100
+
+
+def tampilkan_kode(berkas, nama, judul=None):
+    """
+    Fungsi: expander berisi KODE ASLI satu fungsi/kelas (diambil dari file proyek lewat bukti_kode, bukan salinan teks)
+            beserta nama file dan nomor barisnya. Input: nama file, nama fungsi/kelas, judul (opsional). Output: -
+    Catatan: jangan dipanggil di dalam st.expander lain (Streamlit tidak mengizinkan expander bersarang).
+    """
+    with st.expander(judul or f"Kode: {nama}  ({bk.lokasi_kode(berkas, nama)})"):
+        st.caption(f"Sumber: {bk.lokasi_kode(berkas, nama)}. Ini kode yang benar-benar dijalankan, bukan salinan.")
+        st.code(bk.kode_fungsi(berkas, nama), language="python")

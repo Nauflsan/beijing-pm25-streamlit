@@ -11,7 +11,7 @@ File ini tidak mengimpor streamlit.
 import pandas as pd
 
 import konfigurasi as cfg
-import utilitas_data as ud
+from preprocessing import utilitas_data as ud
 
 # [TERKAIT] kalau kolom baru ditambah di fitur_waktu.py, tambahkan awalan namanya ke "awalan" di bawah,
 # kalau tidak muncul peringatan "fitur belum terpetakan" di halaman Preprocessing.

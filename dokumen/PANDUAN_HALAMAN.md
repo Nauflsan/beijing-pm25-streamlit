@@ -4,10 +4,10 @@ Panduan menjelaskan tiap halaman ke dosen: tujuan, data yang dipakai, fungsi Str
 2-3 kalimat, dan tiga pertanyaan yang mungkin ditanya beserta jawabannya.
 
 **Catatan penting: angka di dokumen ini diisi otomatis.** Angka yang dibungkus penanda `<!--ANGKA:...-->` dan blok
-`<!--BLOK:...-->` ditulis ulang oleh `python perbarui_panduan.py` dari `artifacts/hasil.json` dan CSV. Jalankan perintah itu
+`<!--BLOK:...-->` ditulis ulang oleh `python -m alat.perbarui_panduan` dari `artifacts/hasil.json` dan CSV. Jalankan perintah itu
 setiap selesai training ulang supaya dokumen selalu sama dengan hasil. Jangan edit angka di antara penanda secara manual.
 
-Status: Halaman 1-4 (4 = sebagian). Halaman 5-14 menyusul di tahap berikutnya.
+Status: Halaman 1-5 selesai. Halaman 6-14 menyusul di tahap berikutnya.
 
 ---
 
@@ -65,16 +65,23 @@ Status: Halaman 1-4 (4 = sebagian). Halaman 5-14 menyusul di tahap berikutnya.
 
 ---
 
-## Halaman 4. Preprocessing (sebagian)
-**File:** `halaman/04_preprocessing.py`, **logika tabel:** `peta_fitur.py`
+## Halaman 4. Preprocessing
+**File:** `halaman/04_preprocessing.py`, **logika tabel kolom ke fitur:** `preprocessing/peta_fitur.py`, **peta kode:** `evaluasi/bukti_kode.py`
 
-**Tujuan.** Menjelaskan bagaimana data mentah menjadi fitur model. Bagian yang sudah ada: tabel kolom CSV ke fitur dan pertanyaan antisipasi tentang jumlah fitur. Menyusul: isi data kosong, outlier, log target, split waktu, scaling.
+**Tujuan.** Menjelaskan bagaimana data mentah menjadi fitur model dan memberi bukti untuk tiap keputusan. Enam tab: Kolom ke fitur, Data kosong, Outlier, Log target, Split waktu dan scaling, Temuan EDA ke keputusan.
 
-**Data.** `artifacts/hasil.json`, kunci `data.n_kolom_asli`, `fitur` (daftar fitur Mode A dan B), dan `model.<kunci>.n_fitur_setelah_enkode`.
+**Data.** `artifacts/hasil.json`: `data`, `fitur`, `model.*.n_fitur_setelah_enkode`, `model.*.cv`, `model.*.polusi_parah`, `eksperimen.isi_kosong`, `eksperimen.log_target`, `eksperimen.skala`. Angka data dari CSV.
 
-**Fungsi Streamlit kunci.** `st.table` (tabel panjang dengan teks yang membungkus), `tema.kartu_kpi`, `st.expander`. Jumlah-jumlah dihitung oleh `peta_fitur.ringkasan_jumlah`, bukan ditulis tangan; kalau ada fitur yang tidak terpetakan ke kolom asal, halaman menampilkan peringatan.
+**Fungsi Streamlit kunci.** `st.tabs`, `st.table` (tabel panjang yang membungkus teks), `st.plotly_chart`, `tampilkan_kode` (expander yang menampilkan KODE ASLI fungsi lewat modul `ast`, lengkap dengan nomor baris). Kalimat kesimpulan dibangun dari angka sehingga arahnya ditentukan data.
 
-**Cara menjelaskan.** "Dari <!--ANGKA:n_kolom_csv-->13<!--/ANGKA--> kolom CSV, <!--ANGKA:n_dibuang-->3<!--/ANGKA--> tidak dipakai sebagai fitur, satu jadi target, sisanya jadi <!--ANGKA:n_fitur_a-->11<!--/ANGKA--> fitur di Mode A dan <!--ANGKA:n_fitur_b-->17<!--/ANGKA--> di Mode B. Setelah arah angin di-one-hot, masing-masing menjadi <!--ANGKA:n_enkode_a-->14<!--/ANGKA--> dan <!--ANGKA:n_enkode_b-->20<!--/ANGKA--> kolom."
+**Cara menjelaskan.** "Dari <!--ANGKA:n_kolom_csv-->13<!--/ANGKA--> kolom CSV, <!--ANGKA:n_dibuang-->3<!--/ANGKA--> tidak dipakai sebagai fitur, satu jadi target, sisanya jadi <!--ANGKA:n_fitur_a-->11<!--/ANGKA--> fitur di Mode A dan <!--ANGKA:n_fitur_b-->17<!--/ANGKA--> di Mode B; setelah arah angin di-one-hot menjadi <!--ANGKA:n_enkode_a-->14<!--/ANGKA--> dan <!--ANGKA:n_enkode_b-->20<!--/ANGKA--> kolom. Tiap keputusan (isi data kosong, outlier, log, split) kami uji dengan angka dan kodenya bisa dilihat di halaman."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Kenapa tidak memakai interpolasi padahal RMSE-nya paling kecil?* Interpolasi memberi RMSE <!--ANGKA:isi_interp-->21,17<!--/ANGKA--> berbanding <!--ANGKA:isi_ffill-->21,30<!--/ANGKA--> untuk forward fill, tetapi interpolasi menghitung nilai kosong dari titik sebelum dan SESUDAH jam itu, jadi model ikut mengintip masa depan. Di dunia nyata nilai masa depan tidak tersedia, jadi yang adil adalah forward fill. Median data latih memberi <!--ANGKA:isi_median-->21,89<!--/ANGKA-->.
+2. *Kenapa outlier tidak dibuang?* Karena polusi parah adalah bagian yang paling penting dan paling sulit: saat polusi parah error model terbaik Mode B sekitar <!--ANGKA:parah_b_kali-->2,2<!--/ANGKA--> kali error saat normal, dan Mode A sekitar <!--ANGKA:parah_a_kali-->2,7<!--/ANGKA--> kali. Kalau dibuang, kita tidak bisa lagi menilai model pada kejadian yang paling berbahaya bagi kesehatan.
+3. *Kenapa tidak memakai log pada target?* Dicoba dan dievaluasi di skala asli: RMSE Mode B menjadi <!--ANGKA:log_b_log-->174,66<!--/ANGKA--> berbanding <!--ANGKA:log_b_asli-->21,30<!--/ANGKA--> tanpa log, dan Mode A <!--ANGKA:log_a_log-->75,79<!--/ANGKA--> berbanding <!--ANGKA:log_a_asli-->71,11<!--/ANGKA-->. Jadi log memperburuk dan tidak dipakai. Dugaan penyebabnya pengembalian ke skala asli (expm1) membesarkan selisih; ini belum diuji lebih lanjut.
+4. *Kenapa split berdasarkan waktu, bukan acak?* Data berurutan waktu dan PM2.5 sangat mirip dari jam ke jam. Split waktu melatih di masa lalu (<!--ANGKA:n_latih-->33.072<!--/ANGKA--> baris) dan menguji di tahun yang tidak pernah dilihat (<!--ANGKA:n_uji-->8.661<!--/ANGKA--> baris), seperti kondisi pemakaian nyata. Perbandingan dengan split acak ada di halaman Uji Kejujuran Model.
+5. *Apakah scaling berpengaruh?* Untuk Ridge, RMSE dengan skala <!--ANGKA:skala_b_dengan-->21,298<!--/ANGKA--> dan tanpa skala <!--ANGKA:skala_b_tanpa-->21,307<!--/ANGKA--> (Mode B): hampir sama. Scaler tetap dipasang di dalam Pipeline agar hanya belajar dari data latih; model pohon tidak memakainya karena tidak peka skala.
 
 ### Tabel: Dari <!--ANGKA:n_kolom_csv-->13<!--/ANGKA--> kolom CSV ke fitur model
 
@@ -118,5 +125,24 @@ Jam dan bulan itu melingkar: jam 23 bertetangga dengan jam 0, bulan 12 dengan bu
 
 **5. Apakah 20 kolom tidak terlalu banyak? Perlu PCA atau pengurangan fitur?**
 
-Untuk data sekecil ini jumlahnya cukup banyak (data kecil seperti ini biasanya hanya hasil uji dummy): ada 955 baris latih untuk 20 kolom, sekitar 48 baris per kolom. Risiko overfitting dikendalikan dengan validasi silang berurutan waktu dan evaluasi di tahun yang tidak pernah dilihat saat latih; model pohon juga dibatasi kedalaman dan jumlah sampel daun. Fitur lag saling berkorelasi tinggi, itu wajar dan tidak merusak model pohon. Di eksperimen Ridge Mode B, PCA yang mempertahankan 95% varians memakai 10 dari 20 komponen dengan RMSE 40,67, dibanding 29,51 tanpa PCA (data uji). Perbandingan lengkap dengan dan tanpa PCA ada di halaman PCA.
+Relatif terhadap data, tidak banyak: ada 33.072 baris latih untuk 20 kolom, sekitar 1.654 baris per kolom. Risiko overfitting dikendalikan dengan validasi silang berurutan waktu dan evaluasi di tahun yang tidak pernah dilihat saat latih; model pohon juga dibatasi kedalaman dan jumlah sampel daun. Fitur lag saling berkorelasi tinggi, itu wajar dan tidak merusak model pohon. Di eksperimen Ridge Mode B, PCA yang mempertahankan 95% varians memakai 12 dari 20 komponen dengan RMSE 29,19, dibanding 21,30 tanpa PCA (data uji). Perbandingan lengkap dengan dan tanpa PCA ada di halaman PCA.
 <!--/BLOK-->
+
+---
+
+## Halaman 5. PCA
+**File:** `halaman/05_pca.py`
+
+**Tujuan.** Menguji apakah mengurangi jumlah kolom lewat PCA membantu model, dengan SelectKBest sebagai pembanding. PCA hanya EKSPERIMEN (Ridge), bukan bagian model final.
+
+**Data.** `artifacts/hasil.json` -> `eksperimen` -> `pca` -> `A`/`B` (kolom awal, scree, kumulatif, varian 80/90/95/99%, SelectKBest, tanpa PCA).
+
+**Fungsi Streamlit kunci.** `st.radio` (pilih mode), `st.tabs` (Scree plot, Dengan vs tanpa PCA, Bukti dan kode), `grafik.scree_plot`, `tampilkan_kode` (menampilkan kode asli `_eksp_pca`).
+
+**Cara menjelaskan.** "PCA berhasil mengurangi kolom Mode B dari <!--ANGKA:pca_awal_b-->20<!--/ANGKA--> menjadi <!--ANGKA:pca_k95_b-->12<!--/ANGKA--> pada 95% varians, tetapi RMSE naik dari <!--ANGKA:pca_rmse_tanpa_b-->21,30<!--/ANGKA--> menjadi <!--ANGKA:pca_rmse95_b-->29,19<!--/ANGKA-->. Karena merugikan, model final tidak memakai PCA."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Mana buktinya PCA mengurangi kolom, dan memang sudah di-train?* Datanya di `artifacts/hasil.json` -> `eksperimen` -> `pca`: Mode B dari <!--ANGKA:pca_awal_b-->20<!--/ANGKA--> kolom jadi <!--ANGKA:pca_k95_b-->12<!--/ANGKA--> komponen (95% varians), Mode A dari <!--ANGKA:pca_awal_a-->14<!--/ANGKA--> jadi <!--ANGKA:pca_k95_a-->10<!--/ANGKA-->. Kodenya `preprocessing/eksperimen_ringan.py` fungsi `_eksp_pca` (tampil di tab Bukti dan kode, lengkap dengan nomor baris), dipanggil dari `model/latih_semua_model.py`. Untuk membuktikan, jalankan `python -m evaluasi.bukti_eksperimen --bagian pca`: skrip menghitung ulang dari data dan membandingkannya dengan hasil.json angka demi angka (harus COCOK).
+2. *Kenapa PCA tidak dipakai di model final padahal mengurangi kolom?* Karena akurasinya turun: Mode B RMSE <!--ANGKA:pca_rmse95_b-->29,19<!--/ANGKA--> dengan PCA 95% berbanding <!--ANGKA:pca_rmse_tanpa_b-->21,30<!--/ANGKA--> tanpa PCA (naik <!--ANGKA:pca_naik_b-->37,1<!--/ANGKA-->%); Mode A <!--ANGKA:pca_rmse95_a-->88,47<!--/ANGKA--> berbanding <!--ANGKA:pca_rmse_tanpa_a-->71,11<!--/ANGKA-->. Jumlah kolom hanya <!--ANGKA:pca_awal_b-->20<!--/ANGKA-->, jadi penghematan komputasinya kecil dibanding kerugian akurasinya.
+3. *PCA dilatih untuk kelima model?* Tidak. PCA hanya dicoba dengan Ridge sebagai eksperimen pembanding. Kelima model final dilatih tanpa PCA (lihat `buat_pipeline` di `preprocessing/fitur_waktu.py`: hanya preprocessor dan estimator).
+4. *Kenapa SelectKBest hampir tidak merugikan padahal PCA merugikan?* Di Mode B, memilih 15 dari 20 kolom memberi RMSE <!--ANGKA:kbest15_rmse_b-->21,41<!--/ANGKA-->, hampir sama dengan tanpa seleksi. Dugaan (belum diuji): PCA mengurutkan berdasarkan varians dan mencampur kolom, sehingga fitur terpenting (riwayat PM2.5) ikut tercampur; SelectKBest memilih kolom asli berdasarkan hubungannya dengan target.

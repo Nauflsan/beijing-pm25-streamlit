@@ -10,7 +10,7 @@ from pathlib import Path
 import streamlit as st
 
 import konfigurasi as cfg
-import tema_langit_beijing as tema
+from tampilan import tema_langit_beijing as tema
 
 st.set_page_config(page_title=cfg.NAMA_PROYEK, page_icon=":material/cloud:", layout="wide")
 tema.pasang_tema()

@@ -2,10 +2,10 @@
 latih_semua_model.py - melatih 5 model regresi PM2.5 sekali jalan, lalu menyimpan hasilnya.
 
 CARA PAKAI (dari folder proyek, env aktif):
-  python latih_semua_model.py --cepat      # uji alur, model kecil, hasilnya BUKAN untuk laporan
-  python latih_semua_model.py --penuh      # hasil final (jalankan di laptop, biarkan sampai selesai)
-  python latih_semua_model.py --penuh --ulang    # paksa latih ulang semua model dari nol
-  python latih_semua_model.py --cepat --sampel 2000   # tes kode di data kecil -> artifacts_dummy/ (DUMMY)
+  python -m model.latih_semua_model --cepat      # uji alur, model kecil, hasilnya BUKAN untuk laporan
+  python -m model.latih_semua_model --penuh      # hasil final (jalankan di laptop, biarkan sampai selesai)
+  python -m model.latih_semua_model --penuh --ulang    # paksa latih ulang semua model dari nol
+  python -m model.latih_semua_model --cepat --sampel 2000   # tes kode di data kecil -> artifacts_dummy/ (DUMMY)
 
 Perilaku penting:
   - Tiap model disimpan begitu selesai. Kalau terhenti (laptop mati, Ctrl+C), jalankan lagi perintah yang sama:
@@ -30,12 +30,12 @@ from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegresso
 from sklearn.linear_model import Ridge
 from sklearn.tree import DecisionTreeRegressor
 
-import eksperimen_ringan
-import evaluasi_regresi as ev
-import fitur_waktu as fw
+from preprocessing import eksperimen_ringan
+from evaluasi import evaluasi_regresi as ev
+from preprocessing import fitur_waktu as fw
 import konfigurasi as cfg
-import utilitas_data as ud
-from pso_random_forest import jalankan_pso
+from preprocessing import utilitas_data as ud
+from model.pso_random_forest import jalankan_pso
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 T = cfg.KOLOM_TARGET
@@ -434,7 +434,7 @@ def main(argv=None):
     cetak_ringkasan(hasil, log)
     log.info(f"SELESAI dalam {fmt_waktu(time.time() - t_awal)}. hasil.json: {path_hasil}")
     if dummy:
-        log.info("Ingat: ini DUMMY (artifacts_dummy/). Hasil asli: python latih_semua_model.py --penuh")
+        log.info("Ingat: ini DUMMY (artifacts_dummy/). Hasil asli: python -m model.latih_semua_model --penuh")
     return path_hasil
 
 

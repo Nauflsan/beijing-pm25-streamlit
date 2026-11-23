@@ -10,9 +10,10 @@ import altair as alt
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import konfigurasi as cfg
-import kategori_udara as ku
+from evaluasi import kategori_udara as ku
 
 T = cfg.KOLOM_TARGET
 BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
@@ -133,3 +134,66 @@ def jumlah_per_kategori(nilai):
     """Fungsi: hitung jumlah jam per kategori udara dari deret PM2.5. Input: Series/array (tanpa NaN). Output: list 6 int."""
     idx = ku.indeks_kategori(np.asarray(nilai, dtype=float))
     return [int((idx == i).sum()) for i in range(len(cfg.NAMA_KATEGORI))]
+
+
+# ----------------------------------------------------------------------------- PCA / preprocessing
+def scree_plot(scree, kumulatif, ambang=(0.80, 0.90, 0.95, 0.99)):
+    """
+    Fungsi: scree plot PCA: bar = varians tiap komponen, garis = varians kumulatif, garis putus = ambang.
+    Input : scree (list proporsi varians per komponen), kumulatif (list), ambang (tuple). Output: fig Plotly.
+    """
+    x = list(range(1, len(scree) + 1))
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_bar(x=x, y=[100 * v for v in scree], name="Varians per komponen", marker_color=cfg.WARNA_SERI[0], secondary_y=False)
+    fig.add_scatter(x=x, y=[100 * v for v in kumulatif], name="Kumulatif", mode="lines+markers",
+                    line=dict(color=cfg.WARNA_SERI[1], width=3), secondary_y=True)
+    for a in ambang:
+        fig.add_hline(y=100 * a, line_dash="dot", line_color="rgba(91,107,124,.7)", secondary_y=True,
+                      annotation_text=f"{int(a * 100)}%", annotation_position="bottom right")
+    fig.update_xaxes(title="Komponen utama ke-", dtick=1)
+    fig.update_yaxes(title="Varians per komponen (%)", secondary_y=False)
+    fig.update_yaxes(title="Kumulatif (%)", range=[0, 102], secondary_y=True)
+    return rapikan(fig, tinggi=400)
+
+
+def bar_metode(nama, rmse, warna, acuan=None, judul_x="RMSE di data uji (ug/m3)"):
+    """
+    Fungsi: bar horizontal membandingkan RMSE beberapa metode. Input: nama (list), rmse (list), warna (list hex),
+            acuan (nilai RMSE acuan untuk garis putus, opsional). Output: fig Plotly.
+    """
+    fig = go.Figure(go.Bar(x=rmse, y=nama, orientation="h", marker_color=warna,
+                           text=[f"{v:.2f}".replace(".", ",") for v in rmse], textposition="outside"))
+    if acuan is not None:
+        fig.add_vline(x=acuan, line_dash="dot", line_color="rgba(31,45,61,.6)")
+    fig.update_layout(xaxis_title=judul_x, showlegend=False, yaxis=dict(autorange="reversed"))
+    fig.update_xaxes(range=[0, max(rmse) * 1.15])
+    return rapikan(fig, tinggi=max(260, 44 * len(nama) + 90))
+
+
+def bar_berkelompok(kategori, seri, judul_y="RMSE (ug/m3)"):
+    """
+    Fungsi: bar berkelompok. Input: kategori (list label sumbu x), seri {nama_seri: list nilai sesuai kategori}.
+    Output: fig Plotly.
+    """
+    fig = go.Figure()
+    for i, (nama, nilai) in enumerate(seri.items()):
+        fig.add_bar(name=nama, x=kategori, y=nilai, marker_color=cfg.WARNA_SERI[i % len(cfg.WARNA_SERI)],
+                    text=[f"{v:.2f}".replace(".", ",") for v in nilai], textposition="outside")
+    fig.update_layout(barmode="group", yaxis_title=judul_y)
+    return rapikan(fig)
+
+
+def lipatan_waktu(per_fold, n_latih_total, n_uji):
+    """
+    Fungsi: gambar TimeSeriesSplit: tiap lipatan = jendela latih (membesar) lalu validasi, lalu blok uji akhir.
+    Input : per_fold (list dict n_latih, n_valid dari hasil.json), n_latih_total, n_uji. Output: fig Plotly.
+    """
+    fig = go.Figure()
+    nama_fold = [f"Lipatan {i + 1}" for i in range(len(per_fold))]
+    fig.add_bar(y=nama_fold, x=[f["n_latih"] for f in per_fold], orientation="h", name="Latih", marker_color=cfg.WARNA_SERI[0])
+    fig.add_bar(y=nama_fold, x=[f["n_valid"] for f in per_fold], orientation="h", name="Validasi", marker_color=cfg.WARNA_SERI[1])
+    fig.add_bar(y=["Final"], x=[n_latih_total], orientation="h", name="Latih (semua)", marker_color=cfg.WARNA_SERI[0], showlegend=False)
+    fig.add_bar(y=["Final"], x=[n_uji], orientation="h", name="Uji", marker_color=cfg.WARNA_SERI[3])
+    fig.update_layout(barmode="stack", xaxis_title="Jumlah baris (urut waktu, kiri = lama, kanan = baru)",
+                      yaxis=dict(autorange="reversed"))
+    return rapikan(fig, tinggi=330)
