@@ -108,19 +108,19 @@ Prinsip: web tidak pernah melatih model. Semua angka model dibaca dari `hasil.js
 |---|---|---|---|---|
 | data | ringkasan data (jumlah baris, rentang latih/uji) | model/latih_semua_model.py baris 113 | Data | 2, 3, 4 |
 | fitur | daftar nama fitur Mode A dan B | preprocessing/fitur_waktu.py baris 35 | daftar_fitur | 4 |
-| baseline | persistence 1 jam, 24 jam, rata-rata latih | model/latih_semua_model.py baris 140 | hitung_baseline | 1, 6, 7, 8 |
-| model.<kode>_<mode> (parameter, ukuran, waktu) | 9 model terlatih dan metadatanya | model/latih_semua_model.py baris 171 | latih_dan_simpan | 6, 7 |
-| model.*.cv | validasi silang TimeSeriesSplit | evaluasi/evaluasi_regresi.py baris 124 | cv_regresi | 6 |
-| model.*.uji, per_bulan, per_kategori, polusi_parah, kuantil_residual | metrik di data uji | evaluasi/evaluasi_regresi.py baris 100 | evaluasi_lengkap | 7, 8, 9 |
-| pso | riwayat dan hasil pencarian PSO | model/pso_random_forest.py baris 34 | jalankan_pso | 6 |
-| pemenang | model terbaik tiap mode (menurut CV) | model/latih_semua_model.py baris 254 | pilih_pemenang | 1, 7 |
-| uji_kejujuran | split acak vs split waktu (HGB) | model/latih_semua_model.py baris 222 | uji_kejujuran | 8 |
-| eksperimen.isi_kosong | cara isi data kosong (Ridge Mode B) | preprocessing/eksperimen_preprocessing.py baris 24 | _eksp_isi_kosong | 4 |
+| baseline | persistence 1 jam, 24 jam, rata-rata latih | model/latih_semua_model.py baris 141 | hitung_baseline | 1, 6, 7, 8 |
+| model.<kode>_<mode> (parameter, ukuran, waktu) | 9 model terlatih dan metadatanya | model/latih_semua_model.py baris 172 | latih_dan_simpan | 6, 7 |
+| model.*.cv | validasi silang TimeSeriesSplit | evaluasi/evaluasi_regresi.py baris 126 | cv_regresi | 6 |
+| model.*.uji, per_bulan, per_kategori, polusi_parah, kuantil_residual | metrik di data uji | evaluasi/evaluasi_regresi.py baris 101 | evaluasi_lengkap | 7, 8, 9 |
+| pso | riwayat dan hasil pencarian PSO | model/pso_random_forest.py baris 35 | jalankan_pso | 6 |
+| pemenang | model terbaik tiap mode (menurut CV) | model/latih_semua_model.py baris 255 | pilih_pemenang | 1, 7 |
+| uji_kejujuran | split acak vs split waktu (HGB) | model/latih_semua_model.py baris 223 | uji_kejujuran | 8 |
+| eksperimen.isi_kosong | cara isi data kosong (Ridge Mode B) | preprocessing/eksperimen_preprocessing.py baris 25 | _eksp_isi_kosong | 4 |
 | eksperimen.skala, eksperimen.log_target | skala dan log target (Ridge) | preprocessing/eksperimen_preprocessing.py baris 13 | _eksp_skala_dan_log | 4 |
 | eksperimen.pca | scree, dengan vs tanpa PCA, SelectKBest | preprocessing/eksperimen_pca.py baris 22 | _eksp_pca | 5 |
 | eksperimen.ablasi | Mode B tanpa satu kelompok fitur | preprocessing/eksperimen_ablasi.py baris 10 | _eksp_ablasi | 13 |
-| interpretasi | permutation importance dan partial dependence | model/latih_semua_model.py baris 264 | hitung_interpretasi | 7 |
-| prediksi_uji.csv | prediksi semua model di data uji | model/latih_semua_model.py baris 283 | simpan_prediksi_uji | 7 |
+| interpretasi | permutation importance dan partial dependence | model/latih_semua_model.py baris 265 | hitung_interpretasi | 7 |
+| prediksi_uji.csv | prediksi semua model di data uji | model/latih_semua_model.py baris 284 | simpan_prediksi_uji | 7 |
 <!--/BLOK-->
 
 ## 6. Cara membuktikan angka (untuk menjawab dosen)

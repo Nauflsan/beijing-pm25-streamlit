@@ -132,6 +132,7 @@ class Data:
                          int((self.d["ada_target"] & ~self.d["layak_model"]).sum())}
 
     def xy(self, bagian, mode):
+        """Fungsi: ambil fitur dan target untuk satu bagian data dan satu mode. Input: bagian ('latih'/'uji'), mode ('A'/'B'). Output: (X DataFrame, y Series)."""
         d = self.latih if bagian == "latih" else self.uji
         return d[fw.daftar_fitur(mode)], d[T]
 
@@ -324,6 +325,7 @@ def cetak_ringkasan(hasil, log):
 
 # ----------------------------------------------------------------------------- main
 def baca_argumen(argv=None):
+    """Fungsi: baca argumen baris perintah (--cepat/--penuh, --ulang, --sampel). Input: list argumen atau None. Output: objek argparse."""
     p = argparse.ArgumentParser(description="Latih semua model regresi PM2.5 (lihat docstring file).")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--cepat", action="store_true", help="profil kecil untuk uji alur (bukan hasil final)")

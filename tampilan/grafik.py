@@ -166,7 +166,7 @@ def bar_metode(nama, rmse, warna, acuan=None, judul_x="RMSE di data uji (ug/m3)"
     if acuan is not None:
         fig.add_vline(x=acuan, line_dash="dot", line_color="rgba(31,45,61,.6)")
     fig.update_layout(xaxis_title=judul_x, showlegend=False, yaxis=dict(autorange="reversed"))
-    fig.update_xaxes(range=[0, max(rmse) * 1.15])
+    fig.update_xaxes(range=[min(0, min(rmse) * 1.25), max(rmse) * 1.15])   # nilai negatif (mis. R2) tetap terlihat
     return rapikan(fig, tinggi=max(260, 44 * len(nama) + 90))
 
 
@@ -197,3 +197,190 @@ def lipatan_waktu(per_fold, n_latih_total, n_uji):
     fig.update_layout(barmode="stack", xaxis_title="Jumlah baris (urut waktu, kiri = lama, kanan = baru)",
                       yaxis=dict(autorange="reversed"))
     return rapikan(fig, tinggi=330)
+
+
+# ----------------------------------------------------------------------------- Modelling / Evaluasi / Uji kejujuran
+def garis_konvergensi(riwayat, nama_y="RMSE CV terbaik (sampel PSO)"):
+    """Fungsi: kurva konvergensi PSO. Input: riwayat gbest per iterasi (iterasi 0 = inisialisasi). Output: fig Plotly."""
+    fig = go.Figure(go.Scatter(x=list(range(len(riwayat))), y=riwayat, mode="lines+markers",
+                               line=dict(color=cfg.WARNA_SERI[0], width=3)))
+    fig.update_layout(xaxis_title="Iterasi (0 = inisialisasi acak)", yaxis_title=nama_y, showlegend=False)
+    fig.update_xaxes(dtick=1)
+    return rapikan(fig, tinggi=320)
+
+
+def bar_cv_per_lipatan(seri, judul_y="RMSE validasi (ug/m3)"):
+    """
+    Fungsi: RMSE tiap lipatan validasi silang per model. Input: seri {nama: [rmse lipatan 1, 2, ...]}. Output: fig Plotly.
+    """
+    fig = go.Figure()
+    for i, (nama, nilai) in enumerate(seri.items()):
+        fig.add_bar(name=nama, x=[f"Lipatan {j + 1}" for j in range(len(nilai))], y=nilai,
+                    marker_color=cfg.WARNA_SERI[i % len(cfg.WARNA_SERI)])
+    fig.update_layout(barmode="group", yaxis_title=judul_y)
+    return rapikan(fig, tinggi=360)
+
+
+def scatter_aktual_prediksi(aktual, prediksi, nama_model, maks_titik=3000, seed=42):
+    """
+    Fungsi: sebar aktual vs prediksi + garis ideal (y = x). Input: aktual, prediksi (array), nama_model, maks_titik (sampel
+            acak agar ringan). Output: fig Plotly.
+    """
+    n = len(aktual)
+    idx = np.random.RandomState(seed).choice(n, size=min(maks_titik, n), replace=False)
+    a, p = np.asarray(aktual)[idx], np.asarray(prediksi)[idx]
+    batas = float(max(a.max(), p.max()))
+    fig = go.Figure()
+    fig.add_scatter(x=a, y=p, mode="markers", name=nama_model, marker=dict(size=4, opacity=.45, color=cfg.WARNA_SERI[0]))
+    fig.add_scatter(x=[0, batas], y=[0, batas], mode="lines", name="Ideal (prediksi = aktual)",
+                    line=dict(color=cfg.WARNA_SERI[4], dash="dash"))
+    fig.update_layout(xaxis_title="Aktual pm2.5 (ug/m3)", yaxis_title="Prediksi pm2.5 (ug/m3)")
+    return rapikan(fig, tinggi=420)
+
+
+def garis_waktu(df, kolom, nama):
+    """
+    Fungsi: garis waktu aktual vs beberapa prediksi. Input: df (kolom 'waktu', 'aktual', dan kolom prediksi), kolom (list nama
+            kolom yang digambar), nama (dict kolom -> label). Output: fig Plotly.
+    """
+    fig = go.Figure()
+    fig.add_scatter(x=df["waktu"], y=df["aktual"], name="Aktual", mode="lines", line=dict(color="#1F2D3D", width=2))
+    for i, k in enumerate(kolom):
+        fig.add_scatter(x=df["waktu"], y=df[k], name=nama.get(k, k), mode="lines",
+                        line=dict(color=cfg.WARNA_SERI[(i + 1) % len(cfg.WARNA_SERI)], width=1.6))
+    fig.update_layout(yaxis_title="pm2.5 (ug/m3)", xaxis_title="Waktu")
+    return rapikan(fig, tinggi=380)
+
+
+def histogram_residual(residual):
+    """Fungsi: histogram residual (aktual - prediksi). Input: array residual. Output: fig Plotly."""
+    fig = px.histogram(x=residual, nbins=70, color_discrete_sequence=[cfg.WARNA_SERI[0]])
+    fig.add_vline(x=0, line_dash="dash", line_color=cfg.WARNA_SERI[4])
+    fig.update_layout(xaxis_title="Residual = aktual - prediksi (ug/m3)", yaxis_title="Jumlah jam", bargap=0.02)
+    return rapikan(fig, tinggi=330)
+
+
+def scatter_residual(prediksi, residual, maks_titik=3000, seed=42):
+    """Fungsi: residual terhadap nilai prediksi (melihat apakah galat membesar saat prediksi tinggi). Output: fig Plotly."""
+    n = len(prediksi)
+    idx = np.random.RandomState(seed).choice(n, size=min(maks_titik, n), replace=False)
+    fig = go.Figure(go.Scatter(x=np.asarray(prediksi)[idx], y=np.asarray(residual)[idx], mode="markers",
+                               marker=dict(size=4, opacity=.45, color=cfg.WARNA_SERI[2])))
+    fig.add_hline(y=0, line_dash="dash", line_color=cfg.WARNA_SERI[4])
+    fig.update_layout(xaxis_title="Prediksi pm2.5 (ug/m3)", yaxis_title="Residual (ug/m3)")
+    return rapikan(fig, tinggi=330)
+
+
+def bar_per_bulan(per_bulan, metrik="mae"):
+    """Fungsi: bar error per bulan. Input: dict {bulan: {mae, rmse, ...}} dari hasil.json, metrik. Output: fig Plotly."""
+    bulan = sorted(int(b) for b in per_bulan)
+    nilai = [per_bulan[str(b)][metrik] for b in bulan]
+    fig = go.Figure(go.Bar(x=[BULAN[b - 1] for b in bulan], y=nilai, marker_color=cfg.WARNA_SERI[0],
+                           text=[f"{v:.1f}".replace(".", ",") for v in nilai], textposition="outside"))
+    fig.update_layout(yaxis_title=f"{metrik.upper()} (ug/m3)", showlegend=False)
+    fig.update_yaxes(range=[0, max(nilai) * 1.18])
+    return rapikan(fig, tinggi=330)
+
+
+def bar_per_kategori(per_kategori, metrik="mae"):
+    """
+    Fungsi: bar error per kategori udara AKTUAL, warna = warna kategori. Input: dict {nama_pendek: {n, mae, rmse, bias}},
+            metrik ('mae', 'rmse', atau 'bias'). Output: fig Plotly.
+    """
+    nama = [n for n in cfg.NAMA_KATEGORI_PENDEK if n in per_kategori]
+    warna = [cfg.WARNA_KATEGORI[cfg.NAMA_KATEGORI_PENDEK.index(n)] for n in nama]
+    nilai = [per_kategori[n][metrik] for n in nama]
+    fig = go.Figure(go.Bar(x=nama, y=nilai, marker_color=warna, marker_line_color="rgba(91,107,124,.7)", marker_line_width=1,
+                           text=[f"{v:.1f}".replace(".", ",") for v in nilai], textposition="outside",
+                           customdata=[per_kategori[n]["n"] for n in nama],
+                           hovertemplate="%{x}<br>" + metrik.upper() + " %{y:.1f}<br>n = %{customdata} jam<extra></extra>"))
+    fig.update_layout(yaxis_title=f"{metrik.upper()} (ug/m3)", xaxis_title="Kategori udara aktual", showlegend=False)
+    lo, hi = min(0, min(nilai) * 1.3), max(nilai) * 1.2
+    fig.update_yaxes(range=[lo, hi])
+    return rapikan(fig, tinggi=340)
+
+
+def bar_importance(tabel, n=10):
+    """Fungsi: bar permutation importance. Input: list [{fitur, naik_rmse, std}] urut terpenting. Output: fig Plotly."""
+    t = tabel[:n][::-1]
+    fig = go.Figure(go.Bar(x=[x["naik_rmse"] for x in t], y=[x["fitur"] for x in t], orientation="h",
+                           error_x=dict(type="data", array=[x["std"] for x in t]), marker_color=cfg.WARNA_SERI[0]))
+    fig.update_layout(xaxis_title="Kenaikan RMSE saat kolom diacak (ug/m3)", showlegend=False)
+    return rapikan(fig, tinggi=max(280, 34 * len(t) + 90))
+
+
+def garis_parsial(grid, rata, nama_fitur):
+    """Fungsi: kurva partial dependence satu fitur. Input: grid (nilai fitur), rata (rata prediksi), nama_fitur. Output: fig."""
+    fig = go.Figure(go.Scatter(x=grid, y=rata, mode="lines+markers", line=dict(color=cfg.WARNA_SERI[1], width=3)))
+    fig.update_layout(xaxis_title=nama_fitur, yaxis_title="Rata-rata prediksi pm2.5 (ug/m3)", showlegend=False)
+    return rapikan(fig, tinggi=280)
+
+
+# ----------------------------------------------------------------------------- prediksi
+def _rgba(hex_warna, alpha):
+    """Fungsi: warna hex jadi rgba transparan. Input: '#RRGGBB', alpha. Output: str."""
+    h = hex_warna.lstrip("#")
+    return f"rgba({int(h[0:2], 16)},{int(h[2:4], 16)},{int(h[4:6], 16)},{alpha})"
+
+
+def _pita_kategori():
+    """Batas [bawah, atas] tiap kategori udara (atas kategori terakhir = None) sesuai versi ambang aktif."""
+    atas = list(cfg.AMBANG_BATAS_ATAS[cfg.VERSI_AMBANG_AKTIF])
+    bawah = [0.0] + atas
+    return [(b, a) for b, a in zip(bawah, atas + [None])]
+
+
+def gauge_pm25(nilai, idx_kategori):
+    """
+    Fungsi: gauge (speedometer) prediksi pm2.5. Pita latar = enam kategori udara, jarum/bar = nilai prediksi dan berwarna
+            sesuai kategorinya. Input: nilai (ug/m3), idx_kategori (0-5). Output: fig Plotly.
+    """
+    maks = max(300.0, nilai * 1.2)
+    steps = [{"range": [b, a if a is not None else maks], "color": _rgba(w, .35)}
+             for (b, a), w in zip(_pita_kategori(), cfg.WARNA_KATEGORI)]
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number", value=nilai, number={"suffix": " ug/m3", "valueformat": ".1f", "font": {"size": 44}},
+        gauge={"axis": {"range": [0, maks]}, "bar": {"color": cfg.WARNA_KATEGORI[idx_kategori], "thickness": .38}, "steps": steps,
+               "borderwidth": 1, "bordercolor": "rgba(91,107,124,.6)"}))
+    fig.update_layout(height=300, margin=dict(l=30, r=30, t=30, b=0), paper_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family=f"{cfg.FONT_ISI}, sans-serif", color=cfg.WARNA_TEKS))
+    return fig
+
+
+def bar_prediksi_model(nama, nilai, aktual=None):
+    """
+    Fungsi: bar prediksi tiap model, warna = kategori hasil prediksinya; garis putus = nilai aktual (kalau ada).
+    Input : nama (list), nilai (list), aktual (float atau None). Output: fig Plotly.
+    """
+    warna = [cfg.WARNA_KATEGORI[ku.indeks_kategori(v)] for v in nilai]
+    fig = go.Figure(go.Bar(x=nilai, y=nama, orientation="h", marker_color=warna, marker_line_color="rgba(91,107,124,.7)",
+                           marker_line_width=1, text=[f"{v:.1f}".replace(".", ",") for v in nilai], textposition="outside"))
+    if aktual is not None:
+        fig.add_vline(x=aktual, line_dash="dash", line_color="#1F2D3D",
+                      annotation_text=f"aktual {aktual:.1f}".replace(".", ","), annotation_position="top")
+    fig.update_layout(xaxis_title="Prediksi pm2.5 (ug/m3)", showlegend=False, yaxis=dict(autorange="reversed"))
+    fig.update_xaxes(range=[0, max(max(nilai), aktual or 0) * 1.2 + 1])
+    return rapikan(fig, tinggi=max(240, 52 * len(nama) + 90))
+
+
+def kurva_whatif(x, y, nama_x, titik_dasar=None, kategorik=False):
+    """
+    Fungsi: kurva respons prediksi saat satu variabel digeser, dengan pita warna kategori udara di latar.
+    Input : x (list nilai/kategori), y (list prediksi), nama_x, titik_dasar (x, y) skenario awal, kategorik (True = bar).
+    Output: fig Plotly.
+    """
+    fig = go.Figure()
+    ymaks = max(y) * 1.15 + 5
+    for (b, a), w in zip(_pita_kategori(), cfg.WARNA_KATEGORI):
+        if b < ymaks:
+            fig.add_hrect(y0=b, y1=min(a if a is not None else ymaks, ymaks), fillcolor=_rgba(w, .13), line_width=0, layer="below")
+    if kategorik:
+        fig.add_bar(x=x, y=y, marker_color=cfg.WARNA_SERI[0], text=[f"{v:.1f}".replace(".", ",") for v in y], textposition="outside")
+    else:
+        fig.add_scatter(x=x, y=y, mode="lines+markers", line=dict(color=cfg.WARNA_SERI[0], width=3))
+    if titik_dasar is not None:
+        fig.add_scatter(x=[titik_dasar[0]], y=[titik_dasar[1]], mode="markers", name="Skenario awal",
+                        marker=dict(size=13, color="#1F2D3D", symbol="diamond"))
+    fig.update_layout(xaxis_title=nama_x, yaxis_title="Prediksi pm2.5 (ug/m3)", showlegend=False)
+    fig.update_yaxes(range=[0, ymaks])
+    return rapikan(fig, tinggi=400)

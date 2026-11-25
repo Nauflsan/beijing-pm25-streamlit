@@ -9,6 +9,8 @@ import streamlit as st
 import konfigurasi as cfg
 from evaluasi import kategori_udara as ku
 from evaluasi import bukti_kode as bk
+from model import prediksi as pr
+from preprocessing import fitur_waktu as fw
 from preprocessing import utilitas_data as ud
 
 PESAN_ARTEFAK_KOSONG = ("Hasil training belum ada. Jalankan `python -m model.latih_semua_model --penuh` dulu "
@@ -27,11 +29,13 @@ def muat_data():
 
 
 def _mtime(path):
+    """Fungsi: waktu ubah terakhir file (0 kalau tidak ada), dipakai sebagai kunci cache. Input: Path. Output: float."""
     return path.stat().st_mtime if path.exists() else 0
 
 
 @st.cache_data(show_spinner=False)
 def _baca_hasil(path_str, mtime):
+    """Fungsi: baca hasil.json dengan cache. Input: path (str), mtime. Output: dict."""
     return ud.muat_json(path_str)   # mtime ikut jadi kunci cache supaya hasil.json baru otomatis terbaca
 
 
@@ -124,3 +128,77 @@ def tampilkan_kode(berkas, nama, judul=None):
     with st.expander(judul or f"Kode: {nama}  ({bk.lokasi_kode(berkas, nama)})"):
         st.caption(f"Sumber: {bk.lokasi_kode(berkas, nama)}. Ini kode yang benar-benar dijalankan, bukan salinan.")
         st.code(bk.kode_fungsi(berkas, nama), language="python")
+
+
+def skill_persentase(rmse_model, rmse_acuan):
+    """
+    Fungsi: skill score terhadap acuan dalam persen = (1 - RMSE_model / RMSE_acuan) x 100.
+            Positif = model lebih baik dari acuan; 0 = sama; negatif = lebih buruk. Output: float atau None.
+    """
+    if not rmse_acuan or rmse_model is None:
+        return None
+    return (1 - rmse_model / rmse_acuan) * 100
+
+
+def tabel_semua_model(hasil):
+    """
+    Fungsi: satu tabel datar berisi semua model dan baseline (dibaca dari hasil.json) untuk dipakai berbagai halaman.
+    Input : dict hasil.json. Output: list of dict dengan kunci:
+            kunci, nama, mode ('A'/'B'/'-'), jenis ('Model'/'Baseline'), rmse, mae, medae, r2, cv_rmse, cv_std,
+            ukuran_mb, waktu_latih, waktu_cv (None untuk baseline).
+    """
+    baris = []
+    for kunci, m in hasil["model"].items():
+        u = m["uji"]
+        baris.append({"kunci": kunci, "nama": m["nama"], "mode": m["mode"], "jenis": "Model", "rmse": u["rmse"], "mae": u["mae"],
+                      "medae": u["medae"], "r2": u["r2"], "cv_rmse": m["cv"]["rmse_rata"], "cv_std": m["cv"]["rmse_std"],
+                      "ukuran_mb": m["ukuran_file_mb"], "waktu_latih": m["waktu_latih_detik"], "waktu_cv": m["waktu_cv_detik"]})
+    for kunci, b in hasil["baseline"].items():
+        u = b["uji"]
+        baris.append({"kunci": kunci, "nama": b["nama"], "mode": "-" if kunci == "rata_rata_latih" else "B", "jenis": "Baseline",
+                      "rmse": u["rmse"], "mae": u["mae"], "medae": u["medae"], "r2": u["r2"], "cv_rmse": b["cv"]["rmse_rata"],
+                      "cv_std": b["cv"]["rmse_std"], "ukuran_mb": None, "waktu_latih": None, "waktu_cv": None})
+    return baris
+
+
+@st.cache_data(show_spinner=False)
+def _baca_prediksi(path_str, mtime):
+    """Fungsi: baca prediksi_uji.csv dengan cache. Input: path (str), mtime. Output: DataFrame."""
+    import pandas as pd
+    return pd.read_csv(path_str, parse_dates=["waktu"])
+
+
+def muat_prediksi_uji():
+    """
+    Fungsi: baca artifacts/prediksi_uji.csv (prediksi semua model dan baseline di data uji; cache, segar kalau file berubah).
+    Output: DataFrame, atau None kalau file belum ada.
+    """
+    path = cfg.FOLDER_ARTEFAK_AKTIF / cfg.NAMA_FILE_PREDIKSI_UJI
+    return _baca_prediksi(str(path), _mtime(path)) if path.exists() else None
+
+
+@st.cache_resource(show_spinner="Memuat model ...")
+def _paket_cache(kunci, mtime):
+    """Fungsi: muat satu model dengan st.cache_resource (kunci cache memuat mtime). Input: kunci model, mtime. Output: dict paket atau None."""
+    return pr.muat_paket(kunci)
+
+
+def muat_paket(kunci):
+    """
+    Fungsi: baca satu model terlatih dengan cache (st.cache_resource; segar kalau file berubah). Input: kunci model.
+    Output: dict paket model, atau None kalau file .joblib belum ada. Juga menampilkan peringatan kalau versi scikit-learn berbeda.
+    """
+    path = cfg.FOLDER_ARTEFAK_AKTIF / cfg.SUBFOLDER_MODEL / f"{kunci}.joblib"
+    paket = _paket_cache(kunci, _mtime(path))
+    if paket is not None:
+        beda = pr.versi_tidak_cocok(paket)
+        if beda:
+            st.warning(f"Model dilatih dengan scikit-learn {beda[0]}, sedangkan yang terpasang sekarang {beda[1]}. "
+                       "Hasil prediksi bisa berbeda atau gagal; samakan versi di requirements.txt.")
+    return paket
+
+
+@st.cache_data(show_spinner="Menyiapkan data ...")
+def data_siap():
+    """Fungsi: data mentah + semua fitur (fitur_waktu.siapkan_data), cache. Output: DataFrame."""
+    return fw.siapkan_data(muat_data())

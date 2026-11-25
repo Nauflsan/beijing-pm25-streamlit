@@ -28,6 +28,7 @@ def ambil_sampel_berurutan(X, y, maks):
 
 
 def _menit(detik):
+    """Fungsi: format detik menjadi teks ramah ('45 detik' atau '3.2 menit'). Input: detik. Output: str."""
     return f"{detik / 60:.1f} menit" if detik >= 90 else f"{detik:.0f} detik"
 
 
@@ -65,9 +66,11 @@ def jalankan_pso(X, y, buat_model, batas=None, partikel=6, iterasi=5, w=None, c1
     t_mulai = time.time()
 
     def ke_params(vektor):
+        """Fungsi: ubah vektor posisi partikel menjadi dict parameter bilangan bulat yang dipotong ke batas. Input: vektor. Output: dict."""
         return {k: int(round(float(np.clip(v, lb[i], ub[i])))) for i, (k, v) in enumerate(zip(nama, vektor))}
 
     def fitness(params, tampil=True):
+        """Fungsi: RMSE rata-rata TimeSeriesSplit pada sampel data latih untuk satu kombinasi parameter (dengan cache). Input: dict params, tampil (bool). Output: float."""
         kunci = tuple(params[k] for k in nama)
         if kunci in cache:
             hitung["hit"] += 1

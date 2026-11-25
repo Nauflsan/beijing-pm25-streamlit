@@ -94,6 +94,8 @@ def fmt_id(angka, desimal=2):
     if angka is None:
         return "-"
     teks = f"{angka:,.{desimal}f}"
+    if teks.startswith("-") and not any(c in "123456789" for c in teks):
+        teks = teks[1:]   # hindari "-0,000"
     return teks.replace(",", "#").replace(".", ",").replace("#", ".")
 
 

@@ -60,6 +60,7 @@ def _path(berkas):
 
 
 def _muat(berkas):
+    """Fungsi: baca file kode dan urai dengan ast. Input: nama file. Output: (path, teks, pohon ast); OSError kalau file tidak ada."""
     p = _path(berkas)
     teks = p.read_text(encoding="utf-8")
     return p, teks, ast.parse(teks)

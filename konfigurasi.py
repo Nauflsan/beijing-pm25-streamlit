@@ -132,10 +132,10 @@ CATATAN_AMBANG = ("Ambang AQI didefinisikan untuk rata-rata 24 jam. Di proyek in
 NAMA_PROYEK = "Langit Beijing: Prediksi PM2.5"
 MATA_KULIAH = "Machine Learning"
 KAMPUS = "Universitas Pamulang"
-NAMA_KELOMPOK = "[ISI]"                                  # [UBAH]
-ANGGOTA = [{"nama": "[ISI]", "nim": "[ISI]"}]            # [UBAH] tambah dict per anggota
-DOSEN = "[ISI]"                                          # [UBAH]
-HALAMAN_WAJIB_DOSEN = "[ISI]"                            # [UBAH] catatan halaman wajib dari dosen (kalau ada)
+NAMA_KELOMPOK = "Kelompok 1"                                  # [UBAH]
+ANGGOTA = [{"nama": "Naufal Sausan Su'daa", "nim": "241011403033"}, {"nama": "Mohammad Arief Ardiansyah", "nim": "241011202280"}, {"nama": "Ibnu Ramadhan", "nim": "241011400490"}]            # [UBAH] tambah dict per anggota
+DOSEN = "Farizi Ilham"                                          # [UBAH]
+                           # [UBAH] catatan halaman wajib dari dosen (kalau ada)
 
 # =============================================================================
 # 8. SAKLAR HALAMAN TAMBAHAN

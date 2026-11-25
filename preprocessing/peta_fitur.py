@@ -99,6 +99,7 @@ def bangun_tabel(hasil):
     baris, terpakai = [], set()
 
     def sel(turunan):
+        """Fungsi: teks sel tabel: 'tidak' atau 'N fitur: nama, nama'. Input: list fitur turunan. Output: str."""
         return "tidak" if not turunan else f"{len(turunan)} fitur: " + ", ".join(turunan)
 
     for r in ATURAN:

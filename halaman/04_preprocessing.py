@@ -58,7 +58,7 @@ with tab_fitur:
                "Aturan 'diapakan' dan alasannya adalah keputusan desain yang ditulis di peta_fitur.py.")
     ua.tampilkan_kode("fitur_waktu.py", "siapkan_data")
     ua.tampilkan_kode("fitur_waktu.py", "buat_preprocessor_umum")
-    with st.expander("Pertanyaan yang mungkin ditanya dosen tentang jumlah fitur"):
+    with st.expander("Pertanyaan tentang jumlah fitur"):
         for i, (tanya, jawab) in enumerate(pf.pertanyaan_dosen(hasil), 1):
             st.markdown(f"**{i}. {tanya}**")
             st.markdown(jawab)

@@ -117,6 +117,30 @@ def uji_alur_latih():
     from evaluasi import bukti_kode as bk
     hilang = bk.semua_entri_ada()
     cek("bukti_kode: semua fungsi di peta masih ada di file asalnya", not hilang, str(hilang))
+    # prediksi massal = prediksi satu input (rumus fitur sama), dan validasi menolak file yang salah
+    from model import prediksi as pr
+    import io as _io
+    import pandas as _pd
+    paket = pr.muat_paket("rf_B", path.parent)
+    df_up = _pd.read_csv(_io.StringIO(pr.template_csv(ud.muat_data_mentah())))
+    ok, _, d_valid = pr.validasi_unggahan(df_up, "B")
+    massal = pr.prediksi_massal(paket, d_valid)
+    dsiap = fw.siapkan_data(d_valid)
+    selisih = []
+    for i in range(0, len(massal), 9):
+        w = massal.loc[i, "waktu"]
+        p_ = dsiap.index.get_loc(dsiap.index[dsiap["waktu"] == w][0])
+        cuaca = {k: float(dsiap.iloc[p_][k]) for k in cfg.KOLOM_CUACA_NUMERIK}
+        cuaca[cfg.KOLOM_ARAH_ANGIN] = str(dsiap.iloc[p_][cfg.KOLOM_ARAH_ANGIN])
+        selisih.append(abs(pr.prediksi_satu(paket, w, cuaca, dsiap["pm_diisi"].iloc[p_ - 24:p_].tolist()) - massal.loc[i, "prediksi"]))
+    cek("prediksi massal sama dengan prediksi satu input (selisih < 0,006)", ok and max(selisih) < 0.006, str(max(selisih)))
+    salah = df_up.copy()
+    salah.loc[2, cfg.KOLOM_ARAH_ANGIN] = "XX"
+    cek("validasi_unggahan menolak arah angin yang salah", not pr.validasi_unggahan(salah, "B")[0])
+    cek("validasi_unggahan menolak jam bolong di Mode B", not pr.validasi_unggahan(df_up.drop(index=[10]), "B")[0])
+    from alat import buat_kamus_fungsi as bkf
+    _, n_file, _ = bkf.tulis()
+    cek("kamus fungsi berhasil dibuat dari kode", n_file > 20)
     # eksperimen di hasil.json bisa dihitung ulang dan cocok (dummy)
     from evaluasi import bukti_eksperimen as be
     cek("bukti_eksperimen: hitung ulang cocok dengan hasil.json (dummy)", be.main(["--dummy"]) == 0)

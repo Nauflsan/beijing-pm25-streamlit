@@ -38,6 +38,7 @@ def hitung_metrik(y, p):
 
 
 def _metrik_ringkas(y, p):
+    """Fungsi: versi ringkas hitung_metrik (n, mae, rmse, bias) untuk tabel per bulan/kategori. Input: y, p. Output: dict."""
     m = hitung_metrik(y, p)
     return {"n": m["n"], "mae": m["mae"], "rmse": m["rmse"], "bias": m["bias"]}
 
@@ -113,6 +114,7 @@ def evaluasi_lengkap(y, p, bulan):
 
 
 def _ringkas_cv(per_fold):
+    """Fungsi: rata-rata dan simpangan baku RMSE/MAE/R2 dari hasil tiap lipatan. Input: list dict per lipatan. Output: dict {per_fold, rmse_rata, rmse_std, ...}."""
     out = {"per_fold": per_fold}
     for k in ("rmse", "mae", "r2"):
         nilai = [f[k] for f in per_fold if f[k] is not None]

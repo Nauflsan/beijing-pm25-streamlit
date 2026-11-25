@@ -26,6 +26,7 @@ SARAN_KESEHATAN = [
 
 
 def _batas_atas(versi=None):
+    """Fungsi: batas atas tiap kategori udara untuk satu versi ambang. Input: versi ('2024'/'2012') atau None (pakai versi aktif). Output: array float."""
     return np.asarray(cfg.AMBANG_BATAS_ATAS[versi or cfg.VERSI_AMBANG_AKTIF], dtype=float)
 
 

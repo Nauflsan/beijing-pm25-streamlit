@@ -93,8 +93,6 @@ c1, c2 = st.columns([3, 2])
 with c1:
     st.markdown(f"**Mata kuliah:** {cfg.MATA_KULIAH}  \n**Kampus:** {cfg.KAMPUS}  \n**Kelompok:** {cfg.NAMA_KELOMPOK}  \n"
                 f"**Dosen pengampu:** {cfg.DOSEN}")
-    if cfg.HALAMAN_WAJIB_DOSEN and cfg.HALAMAN_WAJIB_DOSEN != "[ISI]":
-        st.markdown(f"**Halaman wajib dari dosen:** {cfg.HALAMAN_WAJIB_DOSEN}")
 with c2:
     st.dataframe(pd.DataFrame(cfg.ANGGOTA).rename(columns={"nama": "Nama anggota", "nim": "NIM"}), hide_index=True, width="stretch")
 st.caption("Cakupan: satu stasiun, 2010-2014, bukan prediksi real-time. Aplikasi ini bahan belajar, bukan alat keputusan kesehatan.")

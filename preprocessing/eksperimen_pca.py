@@ -20,6 +20,7 @@ T = cfg.KOLOM_TARGET
 
 
 def _eksp_pca(latih, uji):
+    """Fungsi: eksperimen PCA dan SelectKBest dengan Ridge untuk Mode A dan B. Input: latih, uji (hasil bagi_waktu). Output: dict {A/B: scree, kumulatif, tanpa_pca, varian, select_k_best}."""
     out = {}
     for mode in ("A", "B"):
         num, kat = fw.FITUR_NUMERIK[mode], fw.FITUR_KATEGORIK

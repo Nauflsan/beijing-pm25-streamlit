@@ -19,7 +19,7 @@ from evaluasi import kategori_udara as ku
 from preprocessing import peta_fitur as pf
 from preprocessing import utilitas_data as ud
 
-FILE_PANDUAN = [cfg.FOLDER_PROYEK / "dokumen" / "PANDUAN_HALAMAN.md", cfg.FOLDER_PROYEK / "dokumen" / "PANDUAN_KODE.md"]
+FILE_PANDUAN = [cfg.FOLDER_PROYEK / "dokumen" / n for n in ("PANDUAN_HALAMAN.md", "PANDUAN_KODE.md", "PRESENTASI.md")]
 
 
 def kumpulkan_angka(hasil, df):
@@ -54,6 +54,63 @@ def kumpulkan_angka(hasil, df):
         if pem.get(m):
             pp = hasil["model"][pem[m]]["polusi_parah"]
             ekstra[f"parah_{m.lower()}_kali"] = f1(pp["parah"]["mae"] / pp["normal"]["mae"])
+    # --- model, baseline, skill, PSO, uji kejujuran, polusi parah (halaman 6-8)
+    f3 = lambda x: ud.fmt_id(x, 3)
+    b1 = hasil["baseline"]["persistence_1jam"]
+    for kunci, m in hasil["model"].items():
+        for met, desimal in (("rmse", 2), ("mae", 2), ("medae", 2), ("r2", 3)):
+            ekstra[f"m_{kunci}_{met}"] = ud.fmt_id(m["uji"][met], desimal)
+        ekstra[f"cv_{kunci}"] = f2(m["cv"]["rmse_rata"])
+        if m["mode"] == "B":
+            ekstra[f"skill_{kunci}"] = f1((1 - m["uji"]["rmse"] / b1["uji"]["rmse"]) * 100)
+    for kunci, b in hasil["baseline"].items():
+        ekstra.update({f"b_{kunci}_rmse": f2(b["uji"]["rmse"]), f"b_{kunci}_mae": f2(b["uji"]["mae"]),
+                       f"b_{kunci}_r2": f3(b["uji"]["r2"]), f"b_{kunci}_cv": f2(b["cv"]["rmse_rata"])})
+    mB = [m for m in hasil["model"].values() if m["mode"] == "B"]
+    ekstra["n_menang_cv_b"] = str(sum(1 for m in mB if m["cv"]["rmse_rata"] < b1["cv"]["rmse_rata"]))
+    ekstra["n_model_b"] = str(len(mB))
+    ekstra["total_waktu_detik"] = ud.fmt_id(sum(m["waktu_cv_detik"] + m["waktu_latih_detik"] for m in hasil["model"].values()), 0)
+    ekstra["total_mb"] = f1(sum(m["ukuran_file_mb"] for m in hasil["model"].values()))
+    if "pso" in hasil:
+        ps = hasil["pso"]
+        ekstra.update({"pso_fit_pembanding": f2(ps["rmse_cv_pembanding"]), "pso_fit_terbaik": f2(ps["rmse_cv_terbaik"]),
+                       "pso_n_eval": str(ps["n_evaluasi"]), "pso_detik": ud.fmt_id(ps["waktu_detik"], 0),
+                       "pso_partikel": str(ps["pengaturan"]["partikel"]), "pso_iterasi": str(ps["pengaturan"]["iterasi"]),
+                       "pso_n_estimators": str(ps["parameter_terbaik"]["n_estimators"]), "pso_max_depth": str(ps["parameter_terbaik"]["max_depth"]),
+                       "pso_min_leaf": str(ps["parameter_terbaik"]["min_samples_leaf"])})
+    uk = hasil.get("uji_kejujuran")
+    if uk:
+        for md in ("A", "B"):
+            ekstra[f"uj_acak_r2_{md.lower()}"] = f3(uk[md]["split_acak"]["uji"]["r2"])
+            ekstra[f"uj_waktu_r2_{md.lower()}"] = f3(uk[md]["split_waktu"]["uji"]["r2"])
+    for md in ("A", "B"):
+        k = pem.get(md)
+        if not k:
+            continue
+        m = hasil["model"][k]
+        ekstra[f"pem_{md.lower()}_nama"] = m["nama"]
+        ekstra[f"pem_{md.lower()}_cv"] = f2(m["cv"]["rmse_rata"])
+        pp = m["polusi_parah"]
+        ekstra[f"pem_{md.lower()}_parah_mae"] = f1(pp["parah"]["mae"])
+        ekstra[f"pem_{md.lower()}_parah_bias"] = f1(pp["parah"]["bias"])
+        ekstra[f"kq05_{md.lower()}"] = f1(m["kuantil_residual"]["global"]["0.05"])
+        ekstra[f"kq95_{md.lower()}"] = f1(m["kuantil_residual"]["global"]["0.95"])
+        inter = hasil.get("interpretasi", {}).get(md)
+        if inter:
+            ekstra[f"imp_top_{md.lower()}"] = inter["permutation"][0]["fitur"]
+            ekstra[f"imp_top_{md.lower()}_nilai"] = f1(inter["permutation"][0]["naik_rmse"])
+    # model terbaik menurut DATA UJI per mode (bukan menurut CV; keduanya ditampilkan di dokumen presentasi)
+    for md in ("A", "B"):
+        kandidat = [m for m in hasil["model"].values() if m["mode"] == md]
+        tb = min(kandidat, key=lambda m: m["uji"]["rmse"])
+        k = md.lower()
+        ekstra.update({f"terbaik_uji_{k}_nama": tb["nama"], f"terbaik_uji_{k}_rmse": f2(tb["uji"]["rmse"]), f"terbaik_uji_{k}_mae": f2(tb["uji"]["mae"]),
+                       f"terbaik_uji_{k}_r2": f3(tb["uji"]["r2"])})
+        pm_ = hasil["model"][pem[md]]
+        ekstra.update({f"pem_{k}_rmse": f2(pm_["uji"]["rmse"]), f"pem_{k}_mae": f2(pm_["uji"]["mae"]), f"pem_{k}_r2": f3(pm_["uji"]["r2"])})
+    ekstra["terbaik_uji_b_skill"] = f1((1 - min(m["uji"]["rmse"] for m in mB) / b1["uji"]["rmse"]) * 100)
+    ekstra["parah_n"] = ud.fmt_id(b1["polusi_parah"]["parah"]["n"], 0)
+    ekstra["b_persist_parah_mae"] = f1(b1["polusi_parah"]["parah"]["mae"])
     ekstra.update({"n_latih": ud.fmt_id(hasil["data"]["n_latih"], 0), "n_uji": ud.fmt_id(hasil["data"]["n_uji"], 0)})
     return {**ekstra,
         "n_baris": ud.fmt_id(ring["n_baris"], 0),
@@ -87,12 +144,14 @@ def isi_ulang(teks, angka, blok):
     diganti = {"n": 0}
 
     def ganti_angka(m):
+        """Fungsi: pengganti regex untuk satu penanda ANGKA. Input: objek match. Output: teks penanda berisi angka baru (keluar dengan pesan kalau kunci tidak dikenal)."""
         if m.group(1) not in angka:
             sys.exit(f"Kunci ANGKA tidak dikenal di PANDUAN_HALAMAN.md: {m.group(1)}")
         diganti["n"] += 1
         return f"<!--ANGKA:{m.group(1)}-->{angka[m.group(1)]}<!--/ANGKA-->"
 
     def ganti_blok(m):
+        """Fungsi: pengganti regex untuk satu penanda BLOK. Input: objek match. Output: teks penanda berisi blok baru (keluar dengan pesan kalau kunci tidak dikenal)."""
         if m.group(1) not in blok:
             sys.exit(f"Kunci BLOK tidak dikenal di PANDUAN_HALAMAN.md: {m.group(1)}")
         diganti["n"] += 1
@@ -123,6 +182,9 @@ def main():
         baru, n = isi_ulang(berkas.read_text(encoding="utf-8"), angka, blok)
         berkas.write_text(baru, encoding="utf-8")
         print(f"{berkas.name} diperbarui: {n} penanda diisi ulang dari {folder / cfg.NAMA_FILE_HASIL}")
+    from alat import buat_kamus_fungsi
+    path_kamus, n_file, kosong = buat_kamus_fungsi.tulis()
+    print(f"{path_kamus.name} dibuat ulang: {n_file} file kode dibaca, {kosong} fungsi tanpa docstring.")
     if hasil.get("meta", {}).get("dummy"):
         print("Catatan: ini dari artefak DUMMY; angka fitur sama dengan hasil asli, tetapi jalankan ulang tanpa --dummy setelah training penuh.")
 

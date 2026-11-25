@@ -11,6 +11,7 @@ T = cfg.KOLOM_TARGET
 
 
 def _eksp_skala_dan_log(latih, uji):
+    """Fungsi: Ridge dengan vs tanpa scaler, dan target asli vs log1p (dievaluasi di skala asli). Input: latih, uji. Output: (hasil skala, hasil log_target)."""
     out_skala, out_log = {}, {}
     for mode in ("A", "B"):
         num, kat = fw.FITUR_NUMERIK[mode], fw.FITUR_KATEGORIK

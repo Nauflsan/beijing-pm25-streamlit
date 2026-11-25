@@ -7,7 +7,7 @@ Panduan menjelaskan tiap halaman ke dosen: tujuan, data yang dipakai, fungsi Str
 `<!--BLOK:...-->` ditulis ulang oleh `python -m alat.perbarui_panduan` dari `artifacts/hasil.json` dan CSV. Jalankan perintah itu
 setiap selesai training ulang supaya dokumen selalu sama dengan hasil. Jangan edit angka di antara penanda secara manual.
 
-Status: Halaman 1-5 selesai. Halaman 6-14 menyusul di tahap berikutnya.
+Status: Halaman 1-11 dan 14 selesai. Halaman 12 dan 13 (tambahan) menyusul.
 
 ---
 
@@ -146,3 +146,133 @@ Relatif terhadap data, tidak banyak: ada 33.072 baris latih untuk 20 kolom, seki
 2. *Kenapa PCA tidak dipakai di model final padahal mengurangi kolom?* Karena akurasinya turun: Mode B RMSE <!--ANGKA:pca_rmse95_b-->29,19<!--/ANGKA--> dengan PCA 95% berbanding <!--ANGKA:pca_rmse_tanpa_b-->21,30<!--/ANGKA--> tanpa PCA (naik <!--ANGKA:pca_naik_b-->37,1<!--/ANGKA-->%); Mode A <!--ANGKA:pca_rmse95_a-->88,47<!--/ANGKA--> berbanding <!--ANGKA:pca_rmse_tanpa_a-->71,11<!--/ANGKA-->. Jumlah kolom hanya <!--ANGKA:pca_awal_b-->20<!--/ANGKA-->, jadi penghematan komputasinya kecil dibanding kerugian akurasinya.
 3. *PCA dilatih untuk kelima model?* Tidak. PCA hanya dicoba dengan Ridge sebagai eksperimen pembanding. Kelima model final dilatih tanpa PCA (lihat `buat_pipeline` di `preprocessing/fitur_waktu.py`: hanya preprocessor dan estimator).
 4. *Kenapa SelectKBest hampir tidak merugikan padahal PCA merugikan?* Di Mode B, memilih 15 dari 20 kolom memberi RMSE <!--ANGKA:kbest15_rmse_b-->21,41<!--/ANGKA-->, hampir sama dengan tanpa seleksi. Dugaan (belum diuji): PCA mengurutkan berdasarkan varians dan mencampur kolom, sehingga fitur terpenting (riwayat PM2.5) ikut tercampur; SelectKBest memilih kolom asli berdasarkan hubungannya dengan target.
+
+---
+
+## Halaman 6. Modelling dan Tuning
+**File:** `halaman/06_modelling_tuning.py`
+
+**Tujuan.** Memperkenalkan lima model dan alasan memilihnya, membandingkan Random Forest biasa dengan Random Forest + PSO (sebelum dan sesudah tuning), menunjukkan validasi silang berurutan waktu, serta waktu dan ukuran file.
+
+**Data.** `artifacts/hasil.json`: `model.*` (parameter, cv, uji, waktu, ukuran), `baseline`, `pso`, `pemenang`.
+
+**Fungsi Streamlit kunci.** `st.radio` (mode), `st.tabs`, `st.container(border=True)` (kartu model), `st.plotly_chart`, `tampilkan_kode` (kode asli `buat_estimator`, `latih_dan_simpan`, `jalankan_pso`, `cv_regresi`). Kesimpulan PSO dibangun dari angka di tiga tingkat (sampel PSO, validasi silang, data uji).
+
+**Cara menjelaskan.** "Kami melatih lima model regresi dengan dan tanpa riwayat PM2.5. Di Mode B semua model hanya sedikit lebih baik dari baseline persistence (RMSE terbaik <!--ANGKA:m_rf_B_rmse-->20,52<!--/ANGKA--> berbanding <!--ANGKA:b_persistence_1jam_rmse-->22,14<!--/ANGKA-->). Tuning PSO menurunkan error di sampel tempat ia mencari, tetapi tidak membaik di data uji."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Kenapa lima model ini?* Semuanya regresi (memprediksi angka), mewakili keluarga berbeda: linear (Ridge), satu pohon (Decision Tree), kumpulan pohon (Random Forest), boosting (HistGradientBoosting), dan Random Forest yang dituning PSO. Semuanya ringan untuk CPU laptop: seluruh training selesai dalam sekitar <!--ANGKA:total_waktu_detik-->59<!--/ANGKA--> detik ditambah PSO <!--ANGKA:pso_detik-->73<!--/ANGKA--> detik, total ukuran model <!--ANGKA:total_mb-->13,0<!--/ANGKA--> MB.
+2. *Kenapa PSO tidak lebih baik dari Random Forest biasa?* Di sampel fitness PSO, RMSE turun dari <!--ANGKA:pso_fit_pembanding-->25,60<!--/ANGKA--> ke <!--ANGKA:pso_fit_terbaik-->25,32<!--/ANGKA-->. Tetapi di data uji RF biasa <!--ANGKA:m_rf_B_rmse-->20,52<!--/ANGKA--> dan RF + PSO <!--ANGKA:m_rf_pso_B_rmse-->20,77<!--/ANGKA-->; di validasi silang penuh juga tidak membaik. Selisihnya kecil dan kemungkinan masuk wilayah derau; dugaan, PSO sedikit menyesuaikan diri dengan sampel fitness (belum diuji lebih jauh). PSO sengaja diperkecil (<!--ANGKA:pso_partikel-->6<!--/ANGKA--> partikel x <!--ANGKA:pso_iterasi-->5<!--/ANGKA--> iterasi) agar muat di laptop i3.
+3. *Kenapa model terbaik dipilih lewat validasi silang, bukan data uji?* Supaya pemilihan tidak mengintip data uji. Menurut validasi silang model terbaik Mode B adalah <!--ANGKA:pem_b_nama-->Ridge Regression<!--/ANGKA--> (RMSE <!--ANGKA:pem_b_cv-->23,05<!--/ANGKA-->), sedangkan di data uji Random Forest sedikit lebih baik. Selisih antar model dekat sehingga urutannya mudah bergeser, dan itu kami tampilkan apa adanya.
+4. *Kenapa tidak ada model yang jauh lebih baik dari persistence?* Karena PM2.5 per jam sangat mirip dengan jam sebelumnya, sehingga tebakan sederhana sudah kuat; riwayat 1 jam lalu hampir semua informasi yang dibutuhkan (lihat permutation importance di halaman Evaluasi).
+
+---
+
+## Halaman 7. Evaluasi dan Interpretasi
+**File:** `halaman/07_evaluasi_interpretasi.py`
+
+**Tujuan.** Menilai satu model terpilih: metrik, aktual vs prediksi, residual, error per bulan dan kategori udara, serta fitur apa yang paling dipakai.
+
+**Data.** `artifacts/hasil.json` (`model.*.uji`, `per_bulan`, `per_kategori`, `kuantil_residual`, `interpretasi`) dan `artifacts/prediksi_uji.csv` untuk grafik aktual vs prediksi dan residual.
+
+**Fungsi Streamlit kunci.** `st.selectbox` (pilih model, bawaan = terbaik menurut CV), `st.select_slider` (bulan), `st.tabs`, `st.plotly_chart`, `tampilkan_kode`. Kalimat tentang bias dan lebar rentang dibangun dari angka.
+
+**Cara menjelaskan.** "Di Mode B model kami meleset rata-rata sekitar <!--ANGKA:m_ridge_B_mae-->11,80<!--/ANGKA--> ug/m3 (MAE Ridge) dan paling bergantung pada kolom <!--ANGKA:imp_top_b-->pm25_lag1<!--/ANGKA-->: kalau kolom itu diacak, RMSE naik <!--ANGKA:imp_top_b_nilai-->119,4<!--/ANGKA--> ug/m3. Tanpa riwayat PM2.5 (Mode A) modelnya jauh lebih lemah (R2 <!--ANGKA:m_hgb_A_r2-->0,462<!--/ANGKA-->)."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Apa arti MAE dan RMSE di sini?* MAE adalah rata-rata meleset dalam ug/m3; RMSE serupa tetapi lebih menghukum kesalahan besar. Contoh Random Forest Mode B: MAE <!--ANGKA:m_rf_B_mae-->11,38<!--/ANGKA--> dan RMSE <!--ANGKA:m_rf_B_rmse-->20,52<!--/ANGKA-->, artinya sebagian besar meleset kecil tetapi ada lonjakan yang meleset besar.
+2. *Dari mana rentang ketidakpastian di halaman Prediksi?* Dari kuantil residual (aktual dikurangi prediksi) di data uji. Untuk Ridge Mode B, 90% residual ada di antara <!--ANGKA:kq05_b-->-24,3<!--/ANGKA--> dan <!--ANGKA:kq95_b-->26,9<!--/ANGKA--> ug/m3. Ini perkiraan kasar dari satu tahun uji, bukan jaminan statistik.
+3. *Fitur apa yang paling penting dan bagaimana tahu?* Dengan permutation importance: satu kolom diacak lalu dilihat seberapa naik RMSE. Di Mode B kolom teratas <!--ANGKA:imp_top_b-->pm25_lag1<!--/ANGKA-->. Itu menunjukkan ketergantungan model, bukan sebab-akibat di atmosfer.
+4. *Kenapa interpretasi memakai Ridge di Mode B?* Karena interpretasi dihitung untuk model terbaik menurut validasi silang, yaitu <!--ANGKA:pem_b_nama-->Ridge Regression<!--/ANGKA--> di Mode B dan <!--ANGKA:pem_a_nama-->HistGradientBoosting<!--/ANGKA--> di Mode A. Karena Ridge linear, kurva partial dependence-nya berupa garis lurus.
+
+---
+
+## Halaman 8. Uji Kejujuran Model
+**File:** `halaman/08_uji_kejujuran.py` (ciri khas proyek)
+
+**Tujuan.** Menguji apakah model benar-benar bagus atau hanya terlihat bagus: split acak vs split waktu, baseline persistence, kenapa R2 tinggi bisa menipu, dan performa saat polusi parah.
+
+**Data.** `artifacts/hasil.json`: `uji_kejujuran`, `baseline`, `model.*`, `pemenang`. Ringkasan di bagian atas halaman dihitung otomatis.
+
+**Fungsi Streamlit kunci.** `st.container(border=True)` (ringkasan), `st.tabs` (4 tab), `grafik.bar_berkelompok`, `grafik.bar_metode`, `tampilkan_kode` (kode asli `uji_kejujuran`, `hitung_baseline`, `metrik_polusi_parah`). Arah setiap kesimpulan (menang atau kalah, lebih tinggi atau lebih rendah) ditentukan angka, termasuk saat hasilnya tidak sesuai harapan.
+
+**Cara menjelaskan.** "Kami tidak hanya melaporkan R2 yang tinggi. Menebak nilai jam lalu saja sudah R2 <!--ANGKA:b_persistence_1jam_r2-->0,944<!--/ANGKA-->, jadi yang kami laporkan adalah seberapa jauh model mengalahkan tebakan itu: RMSE terbaik hanya <!--ANGKA:skill_rf_B-->7,3<!--/ANGKA-->% lebih rendah. Di split acak Mode A hasilnya tampak lebih bagus (R2 <!--ANGKA:uj_acak_r2_a-->0,596<!--/ANGKA--> vs <!--ANGKA:uj_waktu_r2_a-->0,462<!--/ANGKA-->), tetapi di Mode B tidak, jadi kami tidak mengklaim split acak selalu lebih tinggi."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Apakah model benar-benar lebih baik dari tebakan sederhana?* Sedikit. Di data uji Mode B, RMSE Random Forest <!--ANGKA:m_rf_B_rmse-->20,52<!--/ANGKA--> berbanding <!--ANGKA:b_persistence_1jam_rmse-->22,14<!--/ANGKA--> untuk persistence (lebih baik <!--ANGKA:skill_rf_B-->7,3<!--/ANGKA-->%). Di validasi silang hanya <!--ANGKA:n_menang_cv_b-->3<!--/ANGKA--> dari <!--ANGKA:n_model_b-->5<!--/ANGKA--> model Mode B yang mengalahkan persistence. Itu temuan jujur kami, bukan kegagalan: kami menunjukkannya, bukan menyembunyikannya.
+2. *Apakah split acak selalu terlihat lebih bagus?* Tidak selalu. Mode A: R2 acak <!--ANGKA:uj_acak_r2_a-->0,596<!--/ANGKA--> vs waktu <!--ANGKA:uj_waktu_r2_a-->0,462<!--/ANGKA--> (tampak lebih bagus, kemungkinan karena jam bertetangga bocor ke data uji). Mode B: acak <!--ANGKA:uj_acak_r2_b-->0,936<!--/ANGKA--> vs waktu <!--ANGKA:uj_waktu_r2_b-->0,950<!--/ANGKA--> (tidak lebih bagus). Perlu diingat uji acak mencakup 2010-2014 sedangkan uji waktu hanya 2014, jadi perbandingan ini menunjukkan arah, bukan ukuran persis efek kebocoran.
+3. *Kenapa R2 tinggi bisa menipu?* R2 membandingkan dengan tebakan "selalu rata-rata". Karena PM2.5 sangat mirip dari jam ke jam, persistence tanpa belajar sudah R2 <!--ANGKA:b_persistence_1jam_r2-->0,944<!--/ANGKA-->, sedangkan model terbaik <!--ANGKA:m_rf_B_r2-->0,952<!--/ANGKA-->: R2 nyaris tidak membedakan. Karena itu kami melaporkan MAE, RMSE, MedAE, dan selisih terhadap baseline.
+4. *Bagaimana performa saat polusi parah?* Ada <!--ANGKA:parah_n-->1.737<!--/ANGKA--> jam di atas ambang di data uji. Model terbaik Mode B menurut CV punya MAE <!--ANGKA:pem_b_parah_mae-->20,7<!--/ANGKA--> saat parah (<!--ANGKA:parah_b_kali-->2,2<!--/ANGKA--> kali saat normal; persistence <!--ANGKA:b_persist_parah_mae-->21,0<!--/ANGKA-->). Mode A bias <!--ANGKA:pem_a_parah_bias-->-74,2<!--/ANGKA--> ug/m3: sangat meremehkan polusi parah karena tidak punya riwayat PM2.5.
+
+---
+
+## Halaman 9. Prediksi Satu Input
+**File:** `halaman/09_prediksi_satu_input.py`, **logika:** `model/prediksi.py`
+
+**Tujuan.** Memprediksi PM2.5 satu jam dari input pengguna, menampilkan gauge, kategori udara berwarna, saran kesehatan, rentang ketidakpastian, dan perbandingan semua model.
+
+**Data.** Model dari `artifacts/models/*.joblib`; rentang ketidakpastian dari `hasil.json` (`model.*.kuantil_residual`); mode demo memakai CSV (cuaca, riwayat 24 jam, dan nilai aktual).
+
+**Fungsi Streamlit kunci.** `st.form` + `st.form_submit_button` (input manual), `st.data_editor` (riwayat 24 jam Mode B), `st.session_state` (tombol contoh), `st.cache_resource` (muat model), `st.plotly_chart` (gauge Plotly), `tampilkan_kode`. Rumus fitur sama persis dengan training karena memakai `fitur_waktu.buat_baris_fitur` (diuji di `alat/uji_cepat.py`).
+
+**Cara menjelaskan.** "Pengguna memilih satu jam (atau mengisi manual); model Mode B memakai cuaca dan riwayat 24 jam terakhir. Hasilnya dalam gauge dengan kategori udara, saran kesehatan, dan rentang 90% yang dihitung dari galat model di data uji. Di bawahnya semua model dibandingkan untuk input yang sama."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Dari mana rentang ketidakpastian itu?* Dari kuantil residual (aktual dikurangi prediksi) model terpilih di data uji, dikelompokkan menurut kategori prediksi. Perkiraan kasar dari satu tahun data, bukan jaminan statistik; halaman menyebutnya begitu.
+2. *Kenapa ada Mode A dan Mode B di prediksi?* Mode B butuh riwayat PM2.5 24 jam terakhir dan jauh lebih akurat; Mode A cadangan kalau riwayat tidak ada (RMSE <!--ANGKA:pem_a_rmse-->68,60<!--/ANGKA--> vs <!--ANGKA:pem_b_rmse-->21,30<!--/ANGKA--> untuk model terbaik menurut CV).
+3. *Apakah prediksi di halaman ini sama dengan di training?* Ya. Fungsi pembentuk fitur satu baris dipakai bersama dengan pipeline training dan diuji kecocokannya (30 baris acak, dua mode) di `alat/uji_cepat.py`; Pipeline preprocessing ikut tersimpan di file model.
+4. *Kenapa saran kesehatan hanya ringkasan?* Itu ringkasan umum per kategori AQI, bukan saran medis; aplikasi ini bahan belajar.
+
+---
+
+## Halaman 10. Prediksi Massal
+**File:** `halaman/10_prediksi_massal.py`, **validasi dan prediksi:** `model/prediksi.py`
+
+**Tujuan.** Memprediksi banyak jam sekaligus dari CSV unggahan dan mengunduh hasilnya.
+
+**Data.** CSV unggahan (format sama dengan CSV dataset), template contoh dari data asli, model dari `artifacts/models`.
+
+**Fungsi Streamlit kunci.** `st.download_button` (template dan hasil), `st.file_uploader`, `st.dataframe`, `validasi_unggahan` (pesan error ramah), `prediksi_massal`.
+
+**Cara menjelaskan.** "Pengguna mengunduh template, mengisinya, lalu mengunggah. Kami memvalidasi kolom, arah angin, dan urutan jam dengan pesan yang jelas, lalu setiap jam diprediksi; kalau ada nilai aktual, error dihitung dan hasil bisa diunduh."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Kenapa Mode B butuh jam berurutan tanpa celah?* Karena lag dan rata-rata bergulir dihitung dari baris-baris sebelumnya; jam yang hilang membuat lag salah. Validasi menolak file seperti itu dengan pesan yang jelas.
+2. *Kenapa 24 baris pertama tidak diprediksi (Mode B)?* Butuh riwayat 24 jam sebelumnya; baris awal tidak punya riwayat itu.
+3. *Bagaimana memastikan hasil massal sama dengan prediksi satu input?* Rumus fitur dan model sama; selisih hanya pembulatan 2 desimal pada tabel hasil (diuji manual: selisih maksimum di bawah 0,005 ug/m3).
+
+---
+
+## Halaman 11. Kesimpulan dan Referensi
+**File:** `halaman/11_kesimpulan_referensi.py`
+
+**Tujuan.** Merangkum temuan (dihitung dari hasil.json), keterbatasan, saran, dan daftar pustaka.
+
+**Data.** `artifacts/hasil.json`; daftar pustaka ditulis di kode halaman.
+
+**Fungsi Streamlit kunci.** `st.markdown`, kalimat temuan dibangun dari angka sehingga arah (membantu atau merugikan) mengikuti data.
+
+**Cara menjelaskan.** "Kesimpulan kami: Mode B sedikit lebih baik dari baseline persistence (<!--ANGKA:terbaik_uji_b_skill-->7,3<!--/ANGKA-->% lebih rendah RMSE), Mode A lemah, PSO dan PCA tidak membantu. Keterbatasan utama: satu stasiun, 2010-2014, bukan real-time."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Apa kontribusi proyek ini kalau hasilnya hanya sedikit lebih baik dari baseline?* Pengujian yang jujur: baseline persistence, split berdasarkan waktu, uji R2 vs error, split acak vs waktu, dan evaluasi saat polusi parah; semuanya tersedia dan bisa dibuktikan ulang.
+2. *Apa saran perbaikan?* Horizon prediksi lebih panjang, lebih banyak stasiun dan tahun, fitur tambahan, dan validasi berjalan di beberapa tahun uji (belum diuji).
+3. *Apakah daftar pustaka sudah diverifikasi?* Hanya sumber EPA yang dibaca langsung dari dokumennya; yang lain dari pengetahuan umum dan harus dicek ulang (tahun, halaman, DOI) sebelum masuk laporan. Halaman menyebutkan itu.
+
+---
+
+## Halaman 14. What-if Simulator (tambahan)
+**File:** `halaman/tambahan/14_whatif_simulator.py`
+
+**Tujuan.** Menggeser satu variabel (suhu, titik embun, tekanan, angin, arah angin, jam, bulan, atau riwayat PM2.5) dan melihat kurva prediksi model.
+
+**Data.** Rentang slider dari CSV (persentil 1 sampai 99); model dari `artifacts/models`.
+
+**Fungsi Streamlit kunci.** `st.slider`, `st.selectbox`, `grafik.kurva_whatif` (pita warna kategori udara di latar), `model/prediksi.py:prediksi_satu`.
+
+**Cara menjelaskan.** "Ini menunjukkan bagaimana MODEL merespons perubahan satu variabel dengan variabel lain tetap. Di Mode B riwayat PM2.5 sangat dominan sehingga cuaca hanya sedikit mengubah prediksi; di Mode A pengaruh cuaca lebih terlihat."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Apakah kurva ini hubungan sebab-akibat?* Tidak. Ini respons model, dengan variabel lain dianggap tetap padahal di dunia nyata saling terkait.
+2. *Kenapa di Mode B menggeser suhu hampir tidak mengubah prediksi?* Karena kolom yang paling diandalkan model adalah riwayat PM2.5 (<!--ANGKA:imp_top_b-->pm25_lag1<!--/ANGKA-->; RMSE naik <!--ANGKA:imp_top_b_nilai-->119,4<!--/ANGKA--> ug/m3 saat diacak).
+3. *Kenapa Is dan Ir dibuat 0?* Hampir selalu 0 di data, jadi skenario dasar dibuat 0.
