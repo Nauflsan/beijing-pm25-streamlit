@@ -18,22 +18,21 @@ df = ua.muat_data()
 valid = df[T].dropna()
 idx_rata = ku.indeks_kategori(valid.mean())
 
-tema.header_halaman(cfg.NAMA_PROYEK, "Prediksi PM2.5 per jam di Beijing (2010-2014) dengan regresi time series, "
-                                     "dibuat untuk diuji jujur, bukan sekadar terlihat bagus.")
+tema.hero_beranda(cfg.NAMA_PROYEK, "Prediksi PM2.5 per jam di Beijing (2010-2014) dengan regresi time series, "
+                                   "dibuat untuk diuji jujur, bukan sekadar terlihat bagus.",
+                  [cfg.MATA_KULIAH, cfg.KAMPUS, f"{df['waktu'].dt.year.min()} - {df['waktu'].dt.year.max()}", "per jam, satu stasiun"])
 
 # --- KPI data -----------------------------------------------------------------------------
 jumlah = grafik.jumlah_per_kategori(valid)
 persen_tidak_sehat = 100 * sum(jumlah[3:]) / sum(jumlah)
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3 = st.columns(3)
 with k1:
-    tema.kartu_kpi("Jumlah pengamatan", ua.fmt(len(df), 0), f"{ua.fmt(df[T].isna().sum(), 0)} jam tanpa nilai pm2.5")
+    tema.kartu_kpi_besar("Jumlah pengamatan", ua.fmt(len(df), 0), f"{ua.fmt(df[T].isna().sum(), 0)} jam tanpa nilai pm2.5")
 with k2:
-    tema.kartu_kpi("Rentang data", f"{df['waktu'].dt.year.min()} - {df['waktu'].dt.year.max()}", "per jam, satu stasiun")
+    tema.kartu_kpi_besar("Rata-rata pm2.5", f"{ua.fmt(valid.mean(), 1)} ug/m3", "rata-rata seluruh jam bernilai", idx_rata)
 with k3:
-    tema.kartu_kpi("Rata-rata pm2.5", f"{ua.fmt(valid.mean(), 1)} ug/m3", "rata-rata seluruh jam bernilai", idx_rata)
-with k4:
-    tema.kartu_kpi("Jam kategori Tidak Sehat atau lebih buruk", f"{ua.fmt(persen_tidak_sehat, 1)}%",
-                   f"ambang AQI versi {cfg.VERSI_AMBANG_AKTIF}")
+    tema.kartu_kpi_besar("Jam kategori Tidak Sehat atau lebih buruk", f"{ua.fmt(persen_tidak_sehat, 1)}%",
+                         f"ambang AQI versi {cfg.VERSI_AMBANG_AKTIF}")
 
 # --- KPI model (hasil.json) -----------------------------------------------------------------
 hasil = ua.muat_hasil()
@@ -44,21 +43,22 @@ if hasil and "model" in hasil:
     pem = hasil.get("pemenang", {})
     base = hasil["baseline"]["persistence_1jam"]["uji"]
     tahun = hasil["data"]["tahun_uji_mulai"]
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        if "B" in pem:
-            mb = hasil["model"][pem["B"]]
-            tema.kartu_kpi(f"RMSE model terbaik, Mode B", f"{ua.fmt(mb['uji']['rmse'])} ug/m3", f"{mb['nama']}, uji {tahun}")
-    with m2:
-        tema.kartu_kpi("RMSE baseline persistence 1 jam", f"{ua.fmt(base['rmse'])} ug/m3", "nilai jam lalu dipakai sebagai tebakan")
-    with m3:
-        if "A" in pem:
-            ma = hasil["model"][pem["A"]]
-            tema.kartu_kpi("R2 model terbaik, Mode A (tanpa riwayat)", ua.fmt(ma["uji"]["r2"], 3), f"{ma['nama']}, uji {tahun}")
-    with m4:
-        n_lat = hasil["data"]["n_latih"]
-        tema.kartu_kpi("Baris latih / uji", f"{ua.fmt(n_lat, 0)} / {ua.fmt(hasil['data']['n_uji'], 0)}",
-                       f"split waktu: uji = tahun {tahun} dan sesudahnya")
+    with st.expander("Lihat angka hasil model (RMSE, R2, jumlah data latih dan uji)", expanded=False):
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            if "B" in pem:
+                mb = hasil["model"][pem["B"]]
+                tema.kartu_kpi(f"RMSE model terbaik, Mode B", f"{ua.fmt(mb['uji']['rmse'])} ug/m3", f"{mb['nama']}, uji {tahun}")
+        with m2:
+            tema.kartu_kpi("RMSE baseline persistence 1 jam", f"{ua.fmt(base['rmse'])} ug/m3", "nilai jam lalu dipakai sebagai tebakan")
+        with m3:
+            if "A" in pem:
+                ma = hasil["model"][pem["A"]]
+                tema.kartu_kpi("R2 model terbaik, Mode A (tanpa riwayat)", ua.fmt(ma["uji"]["r2"], 3), f"{ma['nama']}, uji {tahun}")
+        with m4:
+            n_lat = hasil["data"]["n_latih"]
+            tema.kartu_kpi("Baris latih / uji", f"{ua.fmt(n_lat, 0)} / {ua.fmt(hasil['data']['n_uji'], 0)}",
+                           f"split waktu: uji = tahun {tahun} dan sesudahnya")
 else:
     st.info(ua.PESAN_ARTEFAK_KOSONG)
 

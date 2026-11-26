@@ -134,7 +134,7 @@ MATA_KULIAH = "Machine Learning"
 KAMPUS = "Universitas Pamulang"
 NAMA_KELOMPOK = "Kelompok 1"                                  # [UBAH]
 ANGGOTA = [{"nama": "Naufal Sausan Su'daa", "nim": "241011403033"}, {"nama": "Mohammad Arief Ardiansyah", "nim": "241011202280"}, {"nama": "Ibnu Ramadhan", "nim": "241011400490"}]            # [UBAH] tambah dict per anggota
-DOSEN = "Farizi Ilham"
+DOSEN = "Farizi Ilham S.Kom., M.Kom."                                         # [UBAH]
 # =============================================================================
 # 8. SAKLAR HALAMAN TAMBAHAN
 # =============================================================================
