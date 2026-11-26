@@ -81,3 +81,5 @@ PUSTAKA = [
 ]
 for i, p in enumerate(PUSTAKA, 1):
     st.markdown(f"{i}. {p}")
+st.caption("Referensi nomor 3 sampai 11 ditulis dari pengetahuan umum penulis dan belum dicek ulang satu per satu ke sumbernya; cocokkan tahun, "
+           "halaman, dan DOI sebelum dimasukkan ke daftar pustaka laporan. Nomor 1 dibaca langsung dari dokumen EPA. Nomor 2 harus diisi kelompok (SUMBER_DATASET di konfigurasi.py).")

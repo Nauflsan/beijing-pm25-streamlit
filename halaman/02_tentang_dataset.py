@@ -73,7 +73,6 @@ with tab_kualitas:
         tema.kartu_kpi("Waktu ganda (duplikat)", ua.fmt(int(df["waktu"].duplicated().sum()), 0), "baris dengan waktu yang sama")
     st.write("")
     st.markdown(f"**Lokasi:** {cfg.STASIUN_CATATAN}")
-    st.markdown(f"**Sumber dataset:** {cfg.SUMBER_DATASET}")
     st.markdown("**Ringkasan statistik tiap kolom numerik**")
     num = [T] + cfg.KOLOM_CUACA_NUMERIK
     stat = pd.DataFrame({

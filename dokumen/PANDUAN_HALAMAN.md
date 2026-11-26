@@ -7,7 +7,7 @@ Panduan menjelaskan tiap halaman ke dosen: tujuan, data yang dipakai, fungsi Str
 `<!--BLOK:...-->` ditulis ulang oleh `python -m alat.perbarui_panduan` dari `artifacts/hasil.json` dan CSV. Jalankan perintah itu
 setiap selesai training ulang supaya dokumen selalu sama dengan hasil. Jangan edit angka di antara penanda secara manual.
 
-Status: Halaman 1-11 dan 14 selesai. Halaman 12 dan 13 (tambahan) menyusul.
+Status: semua 14 halaman selesai (halaman 12 sampai 14 adalah halaman tambahan yang bisa dimatikan lewat `SAKLAR_HALAMAN_TAMBAHAN`).
 
 ---
 
@@ -276,3 +276,39 @@ Relatif terhadap data, tidak banyak: ada 33.072 baris latih untuk 20 kolom, seki
 1. *Apakah kurva ini hubungan sebab-akibat?* Tidak. Ini respons model, dengan variabel lain dianggap tetap padahal di dunia nyata saling terkait.
 2. *Kenapa di Mode B menggeser suhu hampir tidak mengubah prediksi?* Karena kolom yang paling diandalkan model adalah riwayat PM2.5 (<!--ANGKA:imp_top_b-->pm25_lag1<!--/ANGKA-->; RMSE naik <!--ANGKA:imp_top_b_nilai-->119,4<!--/ANGKA--> ug/m3 saat diacak).
 3. *Kenapa Is dan Ir dibuat 0?* Hampir selalu 0 di data, jadi skenario dasar dibuat 0.
+
+---
+
+## Halaman 12. Pola Waktu dan Cuaca (tambahan)
+**File:** `halaman/tambahan/12_pola_waktu_cuaca.py`
+
+**Tujuan.** Menunjukkan kapan polusi biasanya tinggi menurut jam, bulan, tahun, dan arah angin; alasan di balik fitur waktu siklik.
+
+**Data.** CSV saja (tidak butuh hasil training).
+
+**Fungsi Streamlit kunci.** `st.tabs` (empat tab), `df.pivot_table` + `px.imshow` (heatmap jam x bulan dan arah angin x bulan), `grafik.garis_banyak`. Jam/bulan puncak dan kalimat pembanding dihitung dari data.
+
+**Cara menjelaskan.** "Ada pola musiman dan pola harian sekaligus: polusi lebih tinggi di bulan-bulan tertentu dan berubah menurut jam. Itu sebabnya jam dan bulan kami masukkan sebagai fitur siklik, bukan angka biasa."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Mana yang lebih menentukan, jam atau bulan?* Dibandingkan di halaman: rentang rata-rata antar jam (sekitar 28 ug/m3) lebih kecil daripada simpangan baku rata-rata harian (sekitar 78 ug/m3), jadi jam saja tidak banyak menjelaskan; bulan lebih besar pengaruhnya.
+2. *Apakah arah angin menyebabkan polusi?* Belum bisa disimpulkan: arah dan bulan saling terkait, jadi perbedaan antar arah tidak bisa dibaca sebagai sebab-akibat.
+3. *Apakah pola musiman cukup untuk memprediksi?* Tidak cukup; di Mode A (cuaca dan waktu saja) R2 hanya <!--ANGKA:pem_a_r2-->0,462<!--/ANGKA-->, sedangkan riwayat PM2.5 jauh lebih menentukan.
+
+---
+
+## Halaman 13. Feature Engineering (tambahan)
+**File:** `halaman/tambahan/13_feature_engineering.py`
+
+**Tujuan.** Menjelaskan fitur buatan (sin-cos, lag, rata-rata bergulir) dan mengukur manfaat tiap kelompok lewat ablasi.
+
+**Data.** `artifacts/hasil.json` -> `eksperimen` -> `ablasi` (Ridge Mode B, dari `preprocessing/eksperimen_ablasi.py`); CSV untuk ilustrasi lag.
+
+**Fungsi Streamlit kunci.** `st.tabs`, `grafik.lingkaran_siklik`, `grafik.garis_lag`, `grafik.bar_metode`, `tampilkan_kode`.
+
+**Cara menjelaskan.** "Kami menguji manfaat tiap kelompok fitur dengan membuangnya satu per satu. Membuang lag membuat error naik jauh, sedangkan membuang cuaca, waktu, atau arah angin hampir tidak mengubah hasil di Mode B."
+
+**Pertanyaan yang mungkin ditanya**
+1. *Apa itu ablasi?* Membuang satu kelompok fitur lalu melihat seberapa buruk hasilnya; makin buruk berarti kelompok itu makin penting.
+2. *Apa temuannya?* Tanpa lag dan rolling (sama dengan Mode A) RMSE menjadi <!--ANGKA:pem_a_rmse-->68,60<!--/ANGKA--> (model terbaik Mode A) berbanding <!--ANGKA:pem_b_rmse-->21,30<!--/ANGKA--> (Mode B). Hanya lag 1 jam sudah hampir sama baiknya dengan fitur lengkap di Ridge.
+3. *Apakah hasil ablasi berlaku untuk semua model?* Belum tentu: ablasi memakai Ridge (linear); model berbasis pohon bisa menunjukkan pola berbeda dan itu belum diuji.

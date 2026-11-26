@@ -1,6 +1,6 @@
 # STATUS PROYEK: Langit Beijing (Prediksi PM2.5)
 
-Terakhir diperbarui: Minggu, 22 Nov 2026 (Tahap 5: Prediksi, Kesimpulan, What-if, dokumentasi). Deadline: Rabu, 25 Nov 2026.
+Terakhir diperbarui: Minggu, 22 Nov 2026 (Tahap 6: dokumen perbedaan, deploy, latihan, halaman 12-13). Deadline: Rabu, 25 Nov 2026.
 
 ## Tahap
 - [x] Tahap 0-1: brief, verifikasi, kode training (training penuh sudah jalan di laptop, 156 detik)
@@ -8,7 +8,8 @@ Terakhir diperbarui: Minggu, 22 Nov 2026 (Tahap 5: Prediksi, Kesimpulan, What-if
 - [x] Tahap 3: Preprocessing (6 tab) dan PCA (3 tab) lengkap, dengan bukti dan kode. Belum: Feature Engineering dan Pola Waktu (halaman tambahan, menyusul bila sempat)
 - [x] Tahap 4: halaman 6 Modelling & Tuning, 7 Evaluasi & Interpretasi, 8 Uji Kejujuran Model (dengan hasil.json asli)
 - [x] Tahap 5: halaman 9 Prediksi Satu Input, 10 Prediksi Massal, 11 Kesimpulan, 14 What-if; README, CARA_MENJALANKAN, PRESENTASI, KAMUS_FUNGSI
-- [ ] Tahap 6: deploy, PERBEDAAN_DENGAN_REFERENSI.md, latihan tanya-jawab
+- [x] Tahap 6 (sisi kode dan dokumen): PERBEDAAN_DENGAN_REFERENSI, PANDUAN_DEPLOY, LATIHAN_TANYA_JAWAB, halaman 12 dan 13, requirements terkunci
+- [ ] Tahap 6 (sisi kamu): deploy ke Streamlit Cloud, tes di laptop dengan model asli, screenshot, latihan presentasi
 
 ## File baru/berubah di Tahap 3
 evaluasi/bukti_kode.py, evaluasi/bukti_eksperimen.py, PANDUAN_KODE.md (baru); halaman/04_preprocessing.py (ditulis ulang), halaman/05_pca.py (baru);
@@ -36,7 +37,7 @@ eksperimen_ringan.py dipecah per topik (preprocessing, pca, ablasi). hasil.json 
 ## Catatan Tahap 5
 - Halaman 9, 10, 14 memuat model dari artifacts/models/*.joblib. Di sandbox hanya diuji dengan model DUMMY (data kecil); dengan model asli di laptop belum pernah kulihat.
 - Daftar pustaka halaman 11: hanya sumber EPA yang diverifikasi; sisanya dari pengetahuan umum, cek ulang sebelum masuk laporan.
-- Halaman tambahan 12 (Pola Waktu dan Cuaca) dan 13 (Feature Engineering) BELUM dibuat; menu otomatis memunculkannya begitu filenya ada.
+- Halaman 12 dan 13 sudah dibuat di Tahap 6.
 - Dokumen otomatis: python -m alat.perbarui_panduan (angka di PANDUAN_HALAMAN, PANDUAN_KODE, PRESENTASI + KAMUS_FUNGSI).
 
 ## Diuji di sandbox (Python 3.12, pandas 3.0.6, Streamlit 1.67.0)

@@ -11,8 +11,8 @@ bukan sekadar angka yang terlihat bagus.
 - **Dua mode fitur:** Mode A (cuaca + waktu) dan Mode B (ditambah lag dan rata-rata bergulir PM2.5).
 - **Evaluasi:** latih 2010-2013, uji 2014; MAE, RMSE, R2, MedAE; error per bulan, per kategori udara, dan saat polusi parah.
 - **Halaman** (menu navigasi di atas): Beranda, Tentang Dataset, EDA, Preprocessing, PCA, Modelling dan Tuning, Evaluasi dan Interpretasi,
-  Uji Kejujuran Model, Prediksi Satu Input, Prediksi Massal, Kesimpulan, dan What-if Simulator (tambahan). Dua halaman tambahan lain
-  (Pola Waktu dan Cuaca, Feature Engineering) menyusul; menunya otomatis muncul begitu filenya ada.
+  Uji Kejujuran Model, Prediksi Satu Input, Prediksi Massal, Kesimpulan, dan tiga halaman tambahan (Pola Waktu dan Cuaca,
+  Feature Engineering, What-if Simulator) yang bisa dimatikan lewat `SAKLAR_HALAMAN_TAMBAHAN`.
 - Training dilakukan **di laptop**, hasilnya disimpan di `artifacts/` (`hasil.json` + `models/*.joblib`); web hanya membaca hasil, tidak melatih.
 
 ## Cara cepat
@@ -46,6 +46,9 @@ dokumen/                      panduan (kode, halaman, presentasi, kamus fungsi, 
 | `dokumen/PANDUAN_KODE.md` | peta file, alur data, "kalau mau ganti X ubah Y" |
 | `dokumen/PANDUAN_HALAMAN.md` | tiap halaman: tujuan, cara menjelaskan, pertanyaan dosen |
 | `dokumen/PRESENTASI.md` | naskah presentasi, cara baca grafik, pertanyaan sulit |
+| `dokumen/LATIHAN_TANYA_JAWAB.md` | 30 pertanyaan dosen beserta jawaban dan tempat membuktikannya |
+| `dokumen/PERBEDAAN_DENGAN_REFERENSI.md` | tabel perbedaan dengan web referensi (tiru lalu modifikasi) |
+| `dokumen/PANDUAN_DEPLOY.md` | deploy ke Streamlit Cloud dan masalah umum |
 | `dokumen/KAMUS_FUNGSI.md` | semua fungsi dan penjelasannya (dibuat otomatis dari kode) |
 | `dokumen/STATUS_PROYEK.md` | status tahap dan temuan |
 

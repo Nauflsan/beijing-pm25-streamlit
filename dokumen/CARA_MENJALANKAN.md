@@ -70,11 +70,7 @@ git push
 Folder `artifacts\` sengaja ikut di-commit (web membaca model dari repo). Cek ukuran file model sebelum commit; batas GitHub 100 MB per file.
 `env\`, `logs\`, `artifacts_dummy\`, `bahan_laporan\` sudah dikecualikan di `.gitignore`.
 
-Deploy (garis besar, detail dan pengecekan versi menyusul di Tahap 6):
-1. Buat aplikasi baru di Streamlit Community Cloud dari repo GitHub ini, file utama `app.py`.
-2. Pada pengaturan lanjutan, pilih versi Python yang sama dengan lokal kalau tersedia; kalau tidak, pilih yang terdekat dan pastikan
-   versi paket di `requirements.txt` cocok (model dilatih dengan scikit-learn tertentu; web memperingatkan kalau versinya berbeda).
-3. Tunggu build selesai lalu buka tautan aplikasi.
+Panduan deploy lengkap (langkah, pengecekan versi Python dan requirements, masalah umum): `dokumen/PANDUAN_DEPLOY.md`.
 
 ## 8. Masalah umum
 

@@ -19,7 +19,7 @@ from evaluasi import kategori_udara as ku
 from preprocessing import peta_fitur as pf
 from preprocessing import utilitas_data as ud
 
-FILE_PANDUAN = [cfg.FOLDER_PROYEK / "dokumen" / n for n in ("PANDUAN_HALAMAN.md", "PANDUAN_KODE.md", "PRESENTASI.md")]
+FILE_PANDUAN = [cfg.FOLDER_PROYEK / "dokumen" / n for n in ("PANDUAN_HALAMAN.md", "PANDUAN_KODE.md", "PRESENTASI.md", "LATIHAN_TANYA_JAWAB.md")]
 
 
 def kumpulkan_angka(hasil, df):
@@ -109,6 +109,7 @@ def kumpulkan_angka(hasil, df):
         pm_ = hasil["model"][pem[md]]
         ekstra.update({f"pem_{k}_rmse": f2(pm_["uji"]["rmse"]), f"pem_{k}_mae": f2(pm_["uji"]["mae"]), f"pem_{k}_r2": f3(pm_["uji"]["r2"])})
     ekstra["terbaik_uji_b_skill"] = f1((1 - min(m["uji"]["rmse"] for m in mB) / b1["uji"]["rmse"]) * 100)
+    ekstra["n_lag_roll"] = str(r["selisih_b_a"])
     ekstra["parah_n"] = ud.fmt_id(b1["polusi_parah"]["parah"]["n"], 0)
     ekstra["b_persist_parah_mae"] = f1(b1["polusi_parah"]["parah"]["mae"])
     ekstra.update({"n_latih": ud.fmt_id(hasil["data"]["n_latih"], 0), "n_uji": ud.fmt_id(hasil["data"]["n_uji"], 0)})

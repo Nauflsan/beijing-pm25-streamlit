@@ -384,3 +384,47 @@ def kurva_whatif(x, y, nama_x, titik_dasar=None, kategorik=False):
     fig.update_layout(xaxis_title=nama_x, yaxis_title="Prediksi pm2.5 (ug/m3)", showlegend=False)
     fig.update_yaxes(range=[0, ymaks])
     return rapikan(fig, tinggi=400)
+
+
+# ----------------------------------------------------------------------------- pola waktu / feature engineering
+def heatmap_pola(pivot, judul_warna="Rata-rata pm2.5 (ug/m3)"):
+    """
+    Fungsi: heatmap nilai rata-rata (mis. jam x bulan). Input: DataFrame pivot (index = sumbu y, kolom = sumbu x). Output: fig Plotly.
+    """
+    fig = px.imshow(pivot, aspect="auto", color_continuous_scale="YlOrRd", origin="lower")
+    fig.update_layout(coloraxis_colorbar=dict(title=judul_warna))
+    return rapikan(fig, tinggi=420)
+
+
+def garis_banyak(df_lebar, judul_x, judul_y="Rata-rata pm2.5 (ug/m3)"):
+    """Fungsi: beberapa garis (satu per kolom). Input: DataFrame (index = sumbu x, tiap kolom satu garis). Output: fig Plotly."""
+    fig = go.Figure()
+    for i, kolom in enumerate(df_lebar.columns):
+        fig.add_scatter(x=df_lebar.index, y=df_lebar[kolom], name=str(kolom), mode="lines+markers",
+                        line=dict(color=cfg.WARNA_SERI[i % len(cfg.WARNA_SERI)], width=2.5))
+    fig.update_layout(xaxis_title=judul_x, yaxis_title=judul_y)
+    return rapikan(fig, tinggi=360)
+
+
+def lingkaran_siklik(jumlah, nama_titik, judul):
+    """
+    Fungsi: gambar pasangan sin-cos pada lingkaran (jam 0-23 atau bulan 1-12). Input: jumlah titik (24 atau 12), nama_titik (list label),
+            judul sumbu. Output: fig Plotly.
+    """
+    sudut = 2 * np.pi * np.arange(jumlah) / jumlah
+    fig = go.Figure(go.Scatter(x=np.cos(sudut), y=np.sin(sudut), mode="markers+text", text=nama_titik, textposition="top center",
+                               marker=dict(size=11, color=cfg.WARNA_SERI[0])))
+    fig.update_layout(xaxis_title="cos", yaxis_title="sin", showlegend=False, title=judul)
+    fig.update_xaxes(scaleanchor="y", range=[-1.4, 1.4])
+    fig.update_yaxes(range=[-1.4, 1.4])
+    return rapikan(fig, tinggi=420, judul=judul)
+
+
+def garis_lag(waktu, nilai, lag1, rata3):
+    """Fungsi: ilustrasi fitur lag: pm2.5 asli, lag 1 jam (digeser satu jam), dan rata-rata 3 jam sebelumnya. Output: fig Plotly."""
+    fig = go.Figure()
+    fig.add_scatter(x=waktu, y=nilai, name="pm2.5 (target)", mode="lines", line=dict(color="#1F2D3D", width=2.5))
+    fig.add_scatter(x=waktu, y=lag1, name="pm25_lag1 (nilai 1 jam sebelumnya)", mode="lines", line=dict(color=cfg.WARNA_SERI[1], width=2, dash="dot"))
+    fig.add_scatter(x=waktu, y=rata3, name="pm25_rata3 (rata-rata 3 jam sebelumnya)", mode="lines", line=dict(color=cfg.WARNA_SERI[3], width=2))
+    fig.update_layout(yaxis_title="pm2.5 (ug/m3)", xaxis_title="Waktu")
+    return rapikan(fig, tinggi=360)

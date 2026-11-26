@@ -134,9 +134,7 @@ MATA_KULIAH = "Machine Learning"
 KAMPUS = "Universitas Pamulang"
 NAMA_KELOMPOK = "Kelompok 1"                                  # [UBAH]
 ANGGOTA = [{"nama": "Naufal Sausan Su'daa", "nim": "241011403033"}, {"nama": "Mohammad Arief Ardiansyah", "nim": "241011202280"}, {"nama": "Ibnu Ramadhan", "nim": "241011400490"}]            # [UBAH] tambah dict per anggota
-DOSEN = "Farizi Ilham"                                          # [UBAH]
-                           # [UBAH] catatan halaman wajib dari dosen (kalau ada)
-
+DOSEN = "Farizi Ilham"
 # =============================================================================
 # 8. SAKLAR HALAMAN TAMBAHAN
 # =============================================================================
@@ -161,6 +159,5 @@ GRADIEN_HEADER = ("#E6F1FC", "#C9E0F6", "#A9CCEF")   # [UBAH] biru langit untuk 
 WARNA_SERI = ["#2F6FAE", "#F28E2B", "#8E5BB5", "#2BA58F", "#D6453D", "#7F8C99"]   # [UBAH] warna deret grafik
 FONT_JUDUL = "Sora"             # [UBAH] font Google Fonts untuk judul [TERKAIT] tema_langit_beijing.py
 FONT_ISI = "Nunito Sans"        # [UBAH] font Google Fonts untuk isi
-SUMBER_DATASET = "[ISI] tulis sumber dataset yang dipakai kelompok (nama, penulis, tahun, tautan)"   # [UBAH]
 STASIUN_CATATAN = ("Satu stasiun pemantauan (US Embassy Beijing, kira-kira 39,9489 LU 116,4691 BT). "
                    "Koordinat ini perkiraan; dataset tidak punya kolom koordinat.")   # [UBAH]

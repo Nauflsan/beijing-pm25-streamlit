@@ -259,6 +259,10 @@ grafik.py - fungsi pembuat grafik (Plotly dan Altair) yang dipakai halaman. Fung
 | `gauge_pm25` | 333 | gauge (speedometer) prediksi pm2.5. Pita latar = enam kategori udara, jarum/bar = nilai prediksi dan berwarna sesuai kategorinya. | nilai (ug/m3), idx_kategori (0-5). | fig Plotly. |
 | `bar_prediksi_model` | 350 | bar prediksi tiap model, warna = kategori hasil prediksinya; garis putus = nilai aktual (kalau ada). | nama (list), nilai (list), aktual (float atau None). | fig Plotly. |
 | `kurva_whatif` | 366 | kurva respons prediksi saat satu variabel digeser, dengan pita warna kategori udara di latar. | x (list nilai/kategori), y (list prediksi), nama_x, titik_dasar (x, y) skenario awal, kategorik (True = bar). | fig Plotly. |
+| `heatmap_pola` | 390 | heatmap nilai rata-rata (mis. jam x bulan). | DataFrame pivot (index = sumbu y, kolom = sumbu x). | fig Plotly. |
+| `garis_banyak` | 399 | beberapa garis (satu per kolom). | DataFrame (index = sumbu x, tiap kolom satu garis). | fig Plotly. |
+| `lingkaran_siklik` | 409 | gambar pasangan sin-cos pada lingkaran (jam 0-23 atau bulan 1-12). | jumlah titik (24 atau 12), nama_titik (list label), judul sumbu. | fig Plotly. |
+| `garis_lag` | 423 | ilustrasi fitur lag: pm2.5 asli, lag 1 jam (digeser satu jam), dan rata-rata 3 jam sebelumnya. | - | fig Plotly. |
 
 ### `tampilan/tema_langit_beijing.py`
 
@@ -323,9 +327,9 @@ perbarui_panduan.py - mengisi ulang angka dan tabel di PANDUAN_HALAMAN.md dan PA
 | Fungsi | Baris | Fungsinya apa | Input | Output |
 |---|---|---|---|---|
 | `kumpulkan_angka` | 25 | semua nilai untuk penanda ANGKA. Angka dataset dari CSV, angka fitur dari hasil.json. | dict hasil.json, DataFrame mentah. | dict {kunci: teks}. |
-| `kumpulkan_blok` | 128 | isi tiap penanda BLOK. | dict hasil.json. | dict {nama: teks markdown}. |
-| `isi_ulang` | 139 | ganti isi semua penanda. | teks markdown, dict angka, dict blok. | (teks baru, jumlah diganti). Error (SystemExit) kalau ada kunci penanda yang tidak dikenal. |
-| `main` | 165 | baca hasil.json + CSV, isi ulang PANDUAN_HALAMAN.md. | - | - |
+| `kumpulkan_blok` | 129 | isi tiap penanda BLOK. | dict hasil.json. | dict {nama: teks markdown}. |
+| `isi_ulang` | 140 | ganti isi semua penanda. | teks markdown, dict angka, dict blok. | (teks baru, jumlah diganti). Error (SystemExit) kalau ada kunci penanda yang tidak dikenal. |
+| `main` | 166 | baca hasil.json + CSV, isi ulang PANDUAN_HALAMAN.md. | - | - |
 
 ### `alat/uji_cepat.py`
 
@@ -401,6 +405,14 @@ halaman/11_kesimpulan_referensi.py - Kesimpulan & Referensi: temuan (dihitung da
 
 
 ## halaman/tambahan/ : halaman tambahan
+
+### `halaman/tambahan/12_pola_waktu_cuaca.py`
+
+halaman/tambahan/12_pola_waktu_cuaca.py - Pola Waktu & Cuaca: heatmap jam x bulan, pola musiman, pola harian, dan arah angin x bulan.
+
+### `halaman/tambahan/13_feature_engineering.py`
+
+halaman/tambahan/13_feature_engineering.py - Feature Engineering: fitur waktu siklik (sin-cos), lag dan rata-rata bergulir (tanpa kebocoran), dan ablasi kelompok fitur.
 
 ### `halaman/tambahan/14_whatif_simulator.py`
 
