@@ -54,7 +54,7 @@ with tab_fitur:
     for p in peringatan:
         st.warning(p)
     st.table(tabel.set_index("Kolom asal"))
-    st.caption("Jumlah di tabel dibaca dari artifacts/hasil.json (kunci 'fitur' dan 'n_fitur_setelah_enkode'). "
+    st.caption("Jumlah di tabel dibaca dari artifacts/hasil.json (kunci 'fitur' dan 'n_fitur_segittelah_enkode'). "
                "Aturan 'diapakan' dan alasannya adalah keputusan desain yang ditulis di peta_fitur.py.")
     ua.tampilkan_kode("fitur_waktu.py", "siapkan_data")
     ua.tampilkan_kode("fitur_waktu.py", "buat_preprocessor_umum")
